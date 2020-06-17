@@ -1,0 +1,108 @@
+#  python3.8 som environment
+from archive import GTCSTORE
+from pathlib import Path
+import csv
+from GTC.reporting import budget  # just for checks
+
+class DIALCAL(object):
+    def __init__(self, file_path, input_file_name, output_file_name):
+        """
+        Calibration of the main balance amplifier requires two sets of input data. The first set primarily balances the
+        alpha dial at full scale. The second set primarily balances the beta dial at full scale. Calibration is at the
+        single frequency of 10000 radians per second. See Appendix A1 of E.005.03.
+        Each data set comprises
+        k: the setting of the 7 dial IVD
+        r: the ratio of the injection transformer used
+        Y1: the capacitor connected to the 7 dial IVD
+        Y2 or Y3: the capacitor or resistor connected to the balance dials (alpha at 1, beta at 1 respectively)
+        alpha and beta dial settings for balance
+        :param file_path: directory for data in/out
+        :param input_file_name: csv file formatted to provide all measurement data
+        :param output_file_name: output can be stored in this csv file (same directory)
+        """
+        self.output_name = output_file_name  # optional store in a csv file
+        self.store = GTCSTORE()
+        self.data_folder = Path(file_path)
+        data_in = self.data_folder / input_file_name
+        with open(data_in, newline='') as csvfile:  # format must be correct
+            reader = csv.reader(csvfile)
+            counter = 0
+            for row in reader:
+                counter += 1
+                if row[0] == 'Date':
+                    self.date_string = row[1]
+                elif row[0] == 'Reference':
+                    self.reference_string = row[1]
+                elif row[0] == 'w':  # radians per second
+                    self.w = float(row[1])
+                elif row[0] == 'alpha1':  # with Y2
+                    self.alpha1 = self.store.json_to_ureal(row[1])
+                elif row[0] == 'beta1':  # with Y2
+                    self.beta1 = self.store.json_to_ureal(row[1])
+                elif row[0] == 'alpha2':  # with Y3
+                    self.alpha2 = self.store.json_to_ureal(row[1])
+                elif row[0] == 'beta2':  # with Y3
+                    self.beta2 = self.store.json_to_ureal(row[1])
+                elif row[0] == 'r':  # injection transformer ratio
+                    self.r = float(row[1])
+                elif row[0] == 'k':  # 7 dial IVD setting
+                    self.k = float(row[1])
+                elif row[0] == 'c1':
+                    c1 = self.store.json_to_ucomplex(row[1])
+                elif row[0] == 'c2':
+                    c2 = self.store.json_to_ucomplex(row[1])
+                elif row[0] == 'z3':
+                    z3 = self.store.json_to_ucomplex(row[1])
+                else:
+                    print('This row does not match. Wrong csv file? ', row)
+        assert counter == 12, "csv file incorrect length, should be 12 rows:  %r" % counter
+
+        self.Y1 = 1j * self.w * c1  # e.g. ES14 but note loss angle assumes 1.6 kHz
+        self.Y2 = 1j * self.w * c2  # e.g. GR1000 but note loss angle assumes 1.6 kHz
+        self.Y3 = 1 / z3  # e.g. 1/(100k #4) but note loss angle assumes 1.6 kHz
+
+    def dialfactors(self, **kwargs):
+        """
+        This contains the critical calculation.
+        :param kwargs: booleans file_ouput and append give a choice on whether to produce a file, either append or new
+        :return: returns the two uncertain complex values of the two dial factors
+        """
+        file_output = False
+        behaviour = 'w'
+        append = False  # to write a new csv file
+        for arg in kwargs.keys():
+            if arg == 'file_output':
+                file_output = kwargs[arg]
+            if arg == 'append':
+                append = kwargs[arg]
+        x = self.k / (1e-2 * self.r) * (self.Y1 / self.Y2)
+        y = self.k / (1e-2 * self.r) * (self.Y1 / self.Y3)
+        # equation 38 of E.005.003
+        a = (self.beta2 * x - self.beta1 * y) / (self.alpha1 * self.beta2 - self.alpha2 * self.beta1)
+        b = -1j * (self.alpha2 * x - self.alpha1 * y) / (self.alpha2 * self.beta1 - self.alpha1 * self.beta2)
+        if file_output:
+            data_out = self.data_folder / self.output_name
+            if append:
+                behaviour = 'a'
+            with open(data_out, behaviour, newline='') as csvfile:
+                outwriter = csv.writer(csvfile)
+                outwriter.writerow(['Date', self.date_string])
+                outwriter.writerow(['Reference', self.reference_string])
+                outwriter.writerow(['factora', self.store.ucomplex_to_json(a, new_label='factora')])
+                outwriter.writerow(['factorb', self.store.ucomplex_to_json(b, new_label='factorb')])
+        return a, b
+
+
+if __name__ == '__main__':
+    print('Testing cal_balance.py')
+    cal_dials = DIALCAL('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore', 'test.csv', 'out_test.csv')
+    factora, factorb = cal_dials.dialfactors(file_output=True, append=False)
+    print('factora', factora, type(factora))
+    print('factorb', factorb, type(factorb))
+    keith = factora.imag
+    print(repr(keith))
+    print('budget')
+    print(factorb.imag)
+    print(factorb.imag.u)
+    for l, u in budget(factorb.imag, trim=0):
+        print(l, u)

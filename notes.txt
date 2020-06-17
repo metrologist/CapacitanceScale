@@ -1,0 +1,36 @@
+In this project I will move away from any critical role for Excel. My experience has been that the flexibility of old
+Excel templates creates a significant programming overhead for reliable importation of data. It seems better to
+constrain Python to only interact with csv files. These are easily read by other programmes.
+
+For the impedanceCalc project there is a need to store various component values as GTC uncertain real or complex
+numbers. GTC's persistence module does not seem particularly useful (e.g. does not store intermediate values) and
+the pickle format is too constrained for adding in other information such as measurement dates or other descriptors.
+
+The gtc_archive module uses a two-step process of first converting the GTC values into dictionaries and then using
+json to convert the dictionaries into easily stored strings. This approach makes it easy to attach the most useful
+label to the GTC value. The strings are stored in csv files as required and reverse processes produce a fresh GTC
+variable for later use.
+
+While all history of creation of a GTC value for, say, a capacitor is lost in the storage process, the final value is
+usually all that is required in the next step in the traceability chain. This sort of storage will also be fine for the
+values of lead impedance, transformer ratios and environmental sensitivity coefficients required to analyse bridge
+measurements.
+
+If the correlations between the impedance values became significant for some later calculation then it is likely that
+this calculation would need to be integrated with the original calibration process. All GTC values would then be fully
+interconnected within the program.
+
+The choice is to store information in csv files that are a little difficult to read at first, but are excellent for
+carrying all the parts of a ucomplex. Cutting and pasting makes it not too hard to produce the csv files.
+
+Growing understanding that in general I need CLASS to csv capability. This will let me store leads and capacitors with
+all the required information. The process is likely a method that takes in readings (e.g. from LCR meter, 10:1 cap
+bridge) that generates a csv stored representation. This is available for later calculation. Given that lead corrections
+are very small, it is relatively safe to ignore the relationship between the lead correction and the capacitance scale
+that the measurement of the leads requires.
+
+Combining components seems most effectively done with new classes that pick up appropriate values from the two
+components to be combined. This makes sure that the combined components can be processed as if they were a single
+component. The pi networks represented by component classes only need to be good enough to allow corrections for
+leads. This approach meets the requirements of the two terminal-pair definition of immittance (impedance/admittance)
+but is not for general use.

@@ -1,0 +1,12 @@
+Date,16 October 2019
+Reference,KJ Lab Diary2 p.107
+w,1e4
+alpha1,"{""x"": 1.000098, ""u"": 2e-06, ""df"": Infinity, ""label"": ""alpha1""}"
+beta1,"{""x"": -0.000704, ""u"": 2e-06, ""df"": Infinity, ""label"": ""beta1""}"
+alpha2,"{""x"": -0.000130, ""u"": 2e-06, ""df"": Infinity, ""label"": ""alpha2""}"
+beta2,"{""x"": 0.999970, ""u"": 2e-06, ""df"": Infinity, ""label"": ""beta1""}"
+r,0.01
+k,0.2000000
+c1,"{""xreal"": 5.00047e-13, ""ximag"":0.0,  ""u"": [5e-19, 0.5e-18], ""v"": [2.5e-37, 0.0, 0.0, 2.5e-39], ""df"": Infinity, ""label"": ""ES14""}"
+c2,"{""xreal"": 1.000014e-9, ""ximag"":0.0,  ""u"": [1e-15, 1e-15], ""v"": [1e-30, 0.0, 0.0, 1e-30], ""df"": Infinity, ""label"": ""GR1000B""}"
+z3,"{""xreal"": 99724.19, ""ximag"":1.4e-10,  ""u"": [0.1, 5e-15], ""v"": [0.01, 0.0, 0.0, 2.5e-29], ""df"": Infinity, ""label"": ""100k4""}"
