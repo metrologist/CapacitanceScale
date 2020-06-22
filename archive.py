@@ -2,6 +2,7 @@
 from GTC import ureal, ucomplex
 from json import dumps, loads
 import csv
+from components import LEAD, CAPACITOR
 # imports below are just testing related
 from GTC.reporting import budget  # just for checks
 from math import pi, sqrt  # just for some number creation
@@ -166,7 +167,72 @@ class GTCSTORE(object):
         return ucomplex(unc_dict['xreal'] +1j*unc_dict['ximag'], unc_dict['v'], unc_dict['df'], label=unc_dict['label'])
 
 
+class COMPONENTSTORE(object):
+    def __init__(self):
+        self.gs = GTCSTORE()
+
+    def lead_to_dict(self, lead):
+        to_store = {'relu': lead.relu, 'w': lead.w, 'label': lead.label, 'z': self.gs.ucomplex_to_json(lead.z),
+                    'y': self.gs.ucomplex_to_json(lead.y)}
+        return to_store
+
+    def dict_to_lead(self, filed):  # A more dictionary version of the LEAD class could simplify this
+        name = filed['label']
+        ang_freq = filed['w']
+        rel_u = filed['relu']
+        z = self.gs.json_to_ucomplex(filed['z'])
+        series_z = (z.x.real, z.x.imag/ang_freq)
+        y = self.gs.json_to_ucomplex(filed['y'])
+        parallel_y = (y.x.real, y.x.imag/ang_freq)
+        recovered_lead = LEAD(name, series_z, parallel_y, ang_freq, rel_u)
+        return recovered_lead
+
+    def capacitor_to_dict(self, cap):
+        to_store = {'relu': cap.relu, 'name': cap.label, 'nom_cap': (cap.y13.x.real, cap.y13.x.imag/cap.w),
+                    'yhv': (cap.y12.x.real, cap.y12.x.imag/cap.w), 'ylv': (cap.y34.x.real, cap.y34.x.imag/cap.w),
+                    'ang_freq': cap.w, 'lv_lead': self.lead_to_dict(cap.lvlead),
+                    'hv_lead': self.lead_to_dict(cap.hvlead)}
+        try:
+            to_store['best_value'] = self.gs.ucomplex_to_json(cap.best_value)
+            flag = 'best value set'
+        except AttributeError:
+            flag = 'no best value set'
+        to_store['flag'] = flag
+        return to_store
+
+    def dict_to_capacitor(self, filed):
+        relu = filed['relu']
+        name = filed['name']
+        nom_cap = filed['nom_cap']
+        yhv = filed['yhv']
+        ylv = filed['ylv']
+        ang_freq = filed['ang_freq']
+        hv_lead = self.dict_to_lead(filed['hv_lead'])
+        lv_lead = self.dict_to_lead(filed['lv_lead'])
+        if filed['flag'] == 'best value set':
+            best_value = self.gs.json_to_ucomplex(filed['best_value'])
+            recovered_cap = CAPACITOR(name, nom_cap, yhv, ylv, ang_freq, hv_lead, lv_lead, relu)
+            recovered_cap.set_best_value(best_value)
+        else:
+            recovered_cap = CAPACITOR(name, nom_cap, yhv, ylv, ang_freq, hv_lead, lv_lead, relu)
+
+        return recovered_cap
+
 if __name__ == '__main__':
+    bits = COMPONENTSTORE()
+    w = 1e4
+    hv1 = LEAD('ah11hv1', (286e-3, 0.782e-6), (0.28e-9, 255.2e-12), w, 0.05)
+    stored = bits.lead_to_dict(hv1)
+    print('stored', stored, type(stored))
+    recovered_lead = bits.dict_to_lead(stored)
+    print('recovered_lead', recovered_lead, type(recovered_lead))
+    lv1 = LEAD('ah11lv1', (302e-3, 0.616e-6), (0.20e-9, 93.6e-12), w, 0.05)
+    ah11a1 = CAPACITOR('AH11A1', (0.0, 10e-12), (1.62e-9, 84.2e-12), (0.72e-9, 120.8e-12), w, hv1, lv1, 0.01)
+    stored = bits.capacitor_to_dict(ah11a1)
+    print('stored cap ', stored)
+    recovered_cap = bits.dict_to_capacitor(stored)
+    print('recovered_cap', recovered_cap)
+
     store = GTCSTORE()
     # first set up a trivial calculation
     x1 = ureal(10 * pi, pi / 3, label='x1')
@@ -256,3 +322,5 @@ if __name__ == '__main__':
     print('final', final, type(final))
     final1 = store.json_to_ucomplex(final)
     print('final1', final1, type(final1))
+
+

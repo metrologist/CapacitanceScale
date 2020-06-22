@@ -1,7 +1,8 @@
 #  python3.8 som environment
-from archive import GTCSTORE
+from archive import GTCSTORE, COMPONENTSTORE
 from pathlib import Path
 import csv
+from json import loads
 from GTC import ucomplex
 from GTC.reporting import budget  # just for checks
 
@@ -9,12 +10,12 @@ from GTC.reporting import budget  # just for checks
 Takes results of a Permutable Capacitor run and returns an uncertain complex value for the main 10:1 ratio. 
 """
 class PERMUTE(object):
-    def __init__(self, file_path, input_file_name, output_file_name):
+    def __init__(self, file_path, input_file_names, output_file_name):
         self.output_name = output_file_name  # optional store in a csv file
         self.store = GTCSTORE()
         self.data_folder = Path(file_path)
         self.r = 0.0001  # for 10:1 transformer injection through 10 pF
-        data_in = self.data_folder / input_file_name
+        data_in = self.data_folder / input_file_names[0]
         with open(data_in, newline='') as csvfile:  # format must be correct
             reader = csv.reader(csvfile)
             counter = 0
@@ -57,8 +58,19 @@ class PERMUTE(object):
                 else:
                     print('This row does not match. Wrong csv file? ', row)
         assert counter == 27, "csv file incorrect length, should be 27 rows:  %r" % counter
-        self.GR10 = 10e-12  # temporary value of GR10 ( to be picked up from csv)
-        self.PC = 110e-12  # temporary value of sum of 11 PC capacitors ( to be picked up from csv)
+        data_in = self.data_folder / input_file_names[1]
+        with open(data_in, newline='') as csvfile:  # format must be correct
+            reader = csv.reader(csvfile)
+            for row in reader:
+                if row[0] == 'gr10':
+                    cgr10 = loads(row[1])  # a components.CAPACITOR object
+
+        cstore = COMPONENTSTORE()
+        admit_GR10 = cstore.dict_to_capacitor(cgr10).best_value  # admittance at 10000 rad/s
+        self.GR10 = admit_GR10/(1j * self.w)
+        # self.GR10 = 10e-12  # temporary value of GR10 ( to be picked up from csv)
+        self.PC = (10.000144 + 10.000304 + 10.000218 + 10.000151 + 10.000200 + 10.000138 + 9.9998906 + 10.000130
+                   + 10.000025 + 10.000043 + 10.000277) * 1e-12  # sum of 11 PC capacitors, p.33 of KJ Diary2
 
     def calc_raw_ratio(self):
         # implement formula 37 and 46 of E.005.03
@@ -92,7 +104,8 @@ class PERMUTE(object):
 
 if __name__ == '__main__':
     print('Testing cal_main_ratio.py')
-    ratio_cal = PERMUTE('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore', 'perm.csv', 'out_perm.csv')
+    ratio_cal = PERMUTE('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore',
+                        ['perm.csv', 'leads_and_caps.csv'], 'out_perm.csv')
     print(ratio_cal.balance_dict)
     raw_ratio = ratio_cal.calc_raw_ratio()
     print(repr(raw_ratio))

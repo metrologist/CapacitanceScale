@@ -34,3 +34,13 @@ components to be combined. This makes sure that the combined components can be p
 component. The pi networks represented by component classes only need to be good enough to allow corrections for
 leads. This approach meets the requirements of the two terminal-pair definition of immittance (impedance/admittance)
 but is not for general use.
+
+Information is lost when we recover the CAPACITOR class from csv file as the leads are already attached as independent
+objects. GTC treats this differently from the approach of being clear that there is siginficant sharing of leads.
+
+Maybe instantiate the whole balance dial factors, 10:1 ratio, leads, capacitors and balance readings in the CAPSCALE
+class.
+
+Next steps are for
+    1. a more 'user friendly' workflow, hiding more of the somewhat messy .csv dictionary strings
+    2. implementing all the influence quantities such as voltage, temperature, pressure in the CAPACITOR class.

@@ -1,11 +1,12 @@
 #  python3.8 som environment
-from archive import GTCSTORE
+from archive import GTCSTORE, COMPONENTSTORE
 from pathlib import Path
 import csv
+from json import loads
 from GTC.reporting import budget  # just for checks
 
 class DIALCAL(object):
-    def __init__(self, file_path, input_file_name, output_file_name):
+    def __init__(self, file_path, input_file_names, output_file_name):
         """
         Calibration of the main balance amplifier requires two sets of input data. The first set primarily balances the
         alpha dial at full scale. The second set primarily balances the beta dial at full scale. Calibration is at the
@@ -17,13 +18,14 @@ class DIALCAL(object):
         Y2 or Y3: the capacitor or resistor connected to the balance dials (alpha at 1, beta at 1 respectively)
         alpha and beta dial settings for balance
         :param file_path: directory for data in/out
-        :param input_file_name: csv file formatted to provide all measurement data
+        :param input_file_names: list of files, first is csv with dial settings and components, second has component
+        values.
         :param output_file_name: output can be stored in this csv file (same directory)
         """
         self.output_name = output_file_name  # optional store in a csv file
         self.store = GTCSTORE()
         self.data_folder = Path(file_path)
-        data_in = self.data_folder / input_file_name
+        data_in = self.data_folder / input_file_names[0]
         with open(data_in, newline='') as csvfile:  # format must be correct
             reader = csv.reader(csvfile)
             counter = 0
@@ -48,23 +50,32 @@ class DIALCAL(object):
                 elif row[0] == 'k':  # 7 dial IVD setting
                     self.k = float(row[1])
                 elif row[0] == 'c1':
-                    c1 = self.store.json_to_ucomplex(row[1])
+                    c1 = row[1]  #self.store.json_to_ucomplex(row[1])
                 elif row[0] == 'c2':
-                    c2 = self.store.json_to_ucomplex(row[1])
+                    c2 = row[1]  #self.store.json_to_ucomplex(row[1])
                 elif row[0] == 'z3':
-                    z3 = self.store.json_to_ucomplex(row[1])
+                    z3 = self.store.json_to_ucomplex(row[1])  # z3 stored as json ucomplex dictionary
                 else:
                     print('This row does not match. Wrong csv file? ', row)
         assert counter == 12, "csv file incorrect length, should be 12 rows:  %r" % counter
-
-        self.Y1 = 1j * self.w * c1  # e.g. ES14 but note loss angle assumes 1.6 kHz
-        self.Y2 = 1j * self.w * c2  # e.g. GR1000 but note loss angle assumes 1.6 kHz
+        # get the latest values of c1 and c2 from 'leads_and_caps.csv'
+        data_in = self.data_folder / input_file_names[1]
+        with open(data_in, newline='') as csvfile:  # format must be correct
+            reader = csv.reader(csvfile)
+            for row in reader:
+                if row[0] == c1:
+                    c1 = row[1]
+                elif row[0] == c2:
+                    c2 = row[1]
+        cstore = COMPONENTSTORE()
+        self.Y1 = cstore.dict_to_capacitor(loads(c1)).best_value  # loads(c1) is a components.CAPACITOR object
+        self.Y2 = cstore.dict_to_capacitor(loads(c2)).best_value  # loads(c1) is a components.CAPACITOR object
         self.Y3 = 1 / z3  # e.g. 1/(100k #4) but note loss angle assumes 1.6 kHz
 
     def dialfactors(self, **kwargs):
         """
         This contains the critical calculation.
-        :param kwargs: booleans file_ouput and append give a choice on whether to produce a file, either append or new
+        :param kwargs: booleans file_output and append give a choice on whether to produce a file, either append or new
         :return: returns the two uncertain complex values of the two dial factors
         """
         file_output = False
@@ -95,7 +106,8 @@ class DIALCAL(object):
 
 if __name__ == '__main__':
     print('Testing cal_balance.py')
-    cal_dials = DIALCAL('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore', 'test.csv', 'out_test.csv')
+    cal_dials = DIALCAL('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore',
+                        ['test.csv', 'leads_and_caps.csv'], 'out_test.csv')
     factora, factorb = cal_dials.dialfactors(file_output=True, append=False)
     print('factora', factora, type(factora))
     print('factorb', factorb, type(factorb))
