@@ -87,7 +87,7 @@ class PERMUTE(object):
         raw_ratio = (11-1)/(1 + (self.GR10/self.PC) * dsum * self.r)  # 0.0001 accounts for injection ratio
         return raw_ratio
 
-    def correct_ratio(self, uncorrected_ratio):  # equation 44 of E.005.003
+    def correct_ratio(self, uncorrected_ratio):  # equation 45 of E.005.003
         top = 1+self.zb*(self.y2Y1 + (self.yb/2 + self.y1)*(1+self.zintb*self.y2Y1)) + self.zintb*self.y2Y1
         bottom =1+self.za*(self.y4Y2 + (self.ya/2 + self.y3)*(1+self.zinta*self.y4Y2)) + self.zinta*self.y4Y2
         corrected = uncorrected_ratio * top / bottom

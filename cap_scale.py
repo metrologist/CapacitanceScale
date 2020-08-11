@@ -5,7 +5,7 @@ from GTC.reporting import budget  # just for checks
 
 # For now the starting point is an NMIA value of AH11C1
 w = 1e4  # rad/s
-cap = 99.999486e-12  # pF
+cap = 99.999581e-12  # pF
 ucap = 0.11e-6  # relative expanded uncertainty, k = 2
 dfact = 1.9e-6  # dissipation factor S/F/Hz
 udfact = 0.6e-6 # S/F/Hz, k=2
