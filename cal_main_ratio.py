@@ -105,7 +105,7 @@ class PERMUTE(object):
 if __name__ == '__main__':
     print('Testing cal_main_ratio.py')
     ratio_cal = PERMUTE('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore',
-                        ['perm.csv', 'leads_and_caps.csv'], 'out_perm.csv')
+                        ['perm1.csv', 'leads_and_caps.csv'], 'out_perm1.csv')
     print(ratio_cal.balance_dict)
     raw_ratio = ratio_cal.calc_raw_ratio()
     print(repr(raw_ratio))
