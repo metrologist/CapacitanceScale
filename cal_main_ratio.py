@@ -10,7 +10,7 @@ from GTC.reporting import budget  # just for checks
 Takes results of a Permutable Capacitor run and returns an uncertain complex value for the main 10:1 ratio. 
 """
 class PERMUTE(object):
-    def __init__(self, file_path, input_file_names, output_file_name):
+    def __init__(self, file_path, input_file_names, output_file_name, **kwargs):
         self.output_name = output_file_name  # optional store in a csv file
         self.store = GTCSTORE()
         self.data_folder = Path(file_path)
@@ -57,13 +57,19 @@ class PERMUTE(object):
                     self.y2Y1 = self.store.json_to_ucomplex(row[1])
                 else:
                     print('This row does not match. Wrong csv file? ', row)
-        assert counter == 27, "csv file incorrect length, should be 27 rows:  %r" % counter
+        # assert counter == 27, "csv file incorrect length, should be 27 rows:  %r" % counter
         data_in = self.data_folder / input_file_names[1]
         with open(data_in, newline='') as csvfile:  # format must be correct
             reader = csv.reader(csvfile)
             for row in reader:
                 if row[0] == 'gr10':
                     cgr10 = loads(row[1])  # a components.CAPACITOR object
+        # temporary alternative ...
+        for arg in kwargs.keys():
+            if arg == 'afactor':
+                self.factora = kwargs[arg]
+            if arg == 'bfactor':
+                self.factorb = kwargs[arg]
 
         cstore = COMPONENTSTORE()
         admit_GR10 = cstore.dict_to_capacitor(cgr10).best_value  # admittance at 10000 rad/s
@@ -104,8 +110,8 @@ class PERMUTE(object):
 
 if __name__ == '__main__':
     print('Testing cal_main_ratio.py')
-    ratio_cal = PERMUTE('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore',
-                        ['perm1.csv', 'leads_and_caps.csv'], 'out_perm1.csv')
+    ratio_cal = PERMUTE('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore_12_2020',
+                        ['perm2.csv', 'leads_and_caps.csv'], 'out_perm2.csv')
     print(ratio_cal.balance_dict)
     raw_ratio = ratio_cal.calc_raw_ratio()
     print(repr(raw_ratio))

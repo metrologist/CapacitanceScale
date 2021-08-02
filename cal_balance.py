@@ -106,8 +106,8 @@ class DIALCAL(object):
 
 if __name__ == '__main__':
     print('Testing cal_balance.py')
-    cal_dials = DIALCAL('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore',
-                        ['test.csv', 'leads_and_caps.csv'], 'out_test.csv')
+    cal_dials = DIALCAL('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore_12_2020',
+                        ['test3.csv', 'leads_and_caps.csv'], 'out_test3.csv')
     factora, factorb = cal_dials.dialfactors(file_output=True, append=False)
     print('factora', factora, type(factora))
     print('factorb', factorb, type(factorb))

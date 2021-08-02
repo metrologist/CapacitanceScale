@@ -8,7 +8,7 @@ from GTC.reporting import budget  # just for checks
 from json import dumps, loads
 
 class CAPSCALE(object):
-    def __init__(self, file_path, input_files, output_file_name, ref_value):
+    def __init__(self, file_path, input_files, output_file_name, ref_value, **kwargs):  #, afactor, bfactor, ratio):
         """
 
         :param file_path: the subfolder that holds all the csv files
@@ -47,7 +47,7 @@ class CAPSCALE(object):
                     self.main_ratio = self.store.json_to_ucomplex(row[1])
                 else:
                     print('This row does not match. Wrong csv file? ', row)
-        assert counter == 21, "csv file incorrect length, should be 21 rows:  %r" % counter
+        # assert counter == 21, "csv file incorrect length, should be 21 rows:  %r" % counter
         # next load in all the lead and capacitor objects
         data_in = self.data_folder / input_files[1]
         cap_list = ['ah11a1', 'ah11b1', 'ah11c1', 'ah11d1', 'ah11a2', 'ah11b2', 'ah11c2', 'ah11d2', 'es14', 'es13',
@@ -67,6 +67,14 @@ class CAPSCALE(object):
                     item = loads(row[1])
                     item = self.storecomp.dict_to_lead(item)
                     self.leads[row[0]] = item
+        # temporary alternative ... allows key values to not be supplied from the input csv i.e. counter <21
+        for arg in kwargs.keys():
+            if arg == 'afactor':
+                self.factora = kwargs[arg]
+            if arg == 'bfactor':
+                self.factorb = kwargs[arg]
+            if arg == 'ratio':
+                self.main_ratio = kwargs[arg]
 
     def cap_ratio(self, balance, cap, inverse):
         # equation 47 of E.005.003
@@ -153,7 +161,7 @@ class CAPSCALE(object):
         self.caps['es16'].set_best_value(c16)
         self.caps['es14'].set_best_value(c14)
 
-        return
+        return self.caps
 
     def store_buildup(self):
 
@@ -174,7 +182,7 @@ if __name__ == '__main__':
     # for b in scale.balance_dict:
     #     x = scale.cap_ratio(scale.balance_dict[b], 0.5 * (1 + 94e-6), 3)
     #     print(x)
-    scale.buildup()
+    some_results = scale.buildup()
 
     # let's do a pseudo build up starting with ES14 = +94.445 ppm
     ES14 = 0.5 * (1 + 94.445e-6)

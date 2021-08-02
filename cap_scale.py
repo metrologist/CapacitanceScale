@@ -14,8 +14,8 @@ c = ureal(cap, cap * ucap / 2 , 50, label='ah11c1c')
 cert = g + 1j * w * c  # admittance of reference at angular frequency w
 print('reference value for buildup = ', repr(cert))
 # uses this reference value in CAPSCALE
-buildup = CAPSCALE('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore',
-                   ['in.csv', 'leads_and_caps.csv'], 'out.csv', cert)
+buildup = CAPSCALE('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore_12_2020',
+                   ['in2.csv', 'leads_and_caps.csv'], 'out2.csv', cert)
 buildup.buildup()
 buildup.store_buildup()
 
