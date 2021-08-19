@@ -1,4 +1,4 @@
-#  python3.8 som environment
+#  python3.9 environment
 from meas_cap_ratio import CAPSCALE
 from GTC import ureal
 from GTC.reporting import budget  # just for checks

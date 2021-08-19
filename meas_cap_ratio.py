@@ -1,20 +1,25 @@
-#  python3.8 som environment
+#  python3.9 environment
 from archive import GTCSTORE, COMPONENTSTORE
 from pathlib import Path
 import csv
 from components import CAPACITOR, LEAD, CONNECT, PARALLEL
-from GTC import ucomplex
+from GTC import ucomplex, ureal
 from GTC.reporting import budget  # just for checks
 from json import dumps, loads
 
+
 class CAPSCALE(object):
-    def __init__(self, file_path, input_files, output_file_name, ref_value, **kwargs):  #, afactor, bfactor, ratio):
+    def __init__(self, file_path, input_files, output_file_name, ref_value, **kwargs):
         """
 
-        :param file_path: the subfolder that holds all the csv files
+        Takes in all the measurement information from the input files and has methods to calculate the values of all the
+        capacitors in the buildup based on the assumed value of the reference capacitor.
+        :param file_path: the sub-folder that holds all the csv files
         :param input_files: a list of file names for dial factors, 10:1 ratio, leads, capacitors and balance readings
         :param output_file_name: csv file for calculated values of all the capacitors
         :param ref_value is the up to date value of AH11C1 (derived from external calibration history)
+        :param kwargs: allows values of 'afactor', 'bfactor' and 'ratio' to be entered directly rather than extracted
+        from the input files. This is used when the whole buildup calculation is done in a single run in main.py
         """
         self.ref_cap = ref_value
         self.output_name = output_file_name  # optional store in a csv file
@@ -47,13 +52,12 @@ class CAPSCALE(object):
                     self.main_ratio = self.store.json_to_ucomplex(row[1])
                 else:
                     print('This row does not match. Wrong csv file? ', row)
-        # assert counter == 21, "csv file incorrect length, should be 21 rows:  %r" % counter
         # next load in all the lead and capacitor objects
         data_in = self.data_folder / input_files[1]
         cap_list = ['ah11a1', 'ah11b1', 'ah11c1', 'ah11d1', 'ah11a2', 'ah11b2', 'ah11c2', 'ah11d2', 'es14', 'es13',
                     'es16',
                     'gr10', 'gr100', 'gr1000a', 'gr1000b', 'es13_16']
-        lead_list = ['hv1', 'hv2', 'lv2', 'xfrm', 'hv1_xfrm', 'hv2_xfrm', 'no_lead']
+        lead_list = ['hv1', 'hv2', 'lv1', 'lv2', 'xfrm', 'hv1_xfrm', 'hv2_xfrm', 'no_lead']
         self.caps = {}
         self.leads = {}
         with open(data_in, newline='') as csvfile:
@@ -67,7 +71,7 @@ class CAPSCALE(object):
                     item = loads(row[1])
                     item = self.storecomp.dict_to_lead(item)
                     self.leads[row[0]] = item
-        # temporary alternative ... allows key values to not be supplied from the input csv i.e. counter <21
+        # allows key values to override those supplied from the input csv
         for arg in kwargs.keys():
             if arg == 'afactor':
                 self.factora = kwargs[arg]
@@ -77,94 +81,158 @@ class CAPSCALE(object):
                 self.main_ratio = kwargs[arg]
 
     def cap_ratio(self, balance, cap, inverse):
-        # equation 47 of E.005.003
+        """
+
+        Equation 46,47 of E.005.003
+        :param balance: the tuple of balance dial values
+        :param cap: the 'known' capacitor in the ratio
+        :param inverse: boolean when true to divide capacitor by the ratio
+        :return: the 'known' capacitor value either multiplied or divided by the measured ratio
+        """
+
         ratio = self.main_ratio * 1 / (1 + self.r * (balance[0] * self.factora + 1j * balance[1] * self.factorb))
         if inverse:
             return cap / ratio
         else:
             return cap * ratio
 
-    def sum_ratio(self, bal1, bal2, sum):
+    def sum_ratio(self, bal1, bal2, sum_val):
         """
 
-        :param bal1:
-        :param bal2:
-        :param sum:
-        :return:
+        Calculates the value of the two 5 pF capacitors (ES 13 and ES16) from knowing the value of the two in parallel
+        and their difference in ratio when individually balanced against the 0.5 pF (ES14). Equations 19 to 21 of
+        E.005.003. Preferred method is sum_ratio2 that includes the effect of connecting to the injection transformer.
+        :param bal1: ratio ES14/ES13
+        :param bal2: ratio ES14/ES16
+        :param sum_val: the value of the two capacitors in parallel
+        :return: value of ES13, ES16 and ES14
         """
-        ratio1 = 1/((self.main_ratio) * 1 / (1 + self.r * (bal1[0] * self.factora + 1j * bal1[1] * self.factorb)))
-        ratio2 = 1/((self.main_ratio) * 1 / (1 + self.r * (bal2[0] * self.factora + 1j * bal2[1] * self.factorb)))
-        c13 = ratio2 / (ratio1 + ratio2) * sum
-        c16 = ratio1 / (ratio1 + ratio2) * sum
-        c14 = (ratio1 * ratio2) / (ratio1 + ratio2) * sum
+        ratio1 = 1 / (self.main_ratio * 1 / (1 + self.r * (bal1[0] * self.factora + 1j * bal1[1] * self.factorb)))
+        ratio2 = 1 / (self.main_ratio * 1 / (1 + self.r * (bal2[0] * self.factora + 1j * bal2[1] * self.factorb)))
+        c13 = ratio2 / (ratio1 + ratio2) * sum_val
+        c16 = ratio1 / (ratio1 + ratio2) * sum_val
+        c14 = (ratio1 * ratio2) / (ratio1 + ratio2) * sum_val
+        return c13, c16, c14
+
+    def sum_ratio2(self, bal1, bal2, sum_val, cap1, cap2, com_lead):
+        """
+
+        Calculates the value of the two 5 pF capacitors (ES13 and ES16) from knowing the value of the two in parallel
+        and their difference in ratio when individually balanced against the 0.5 pF (ES14). The 5 pF capacitors connect
+        directly to the HV side when measured against a 100 pF capacitor, but are on the LV side with the injection
+        transformer (xfrm LEAD) when being compared to the 0.5 pF capacitor. E005.003 does not have these formulae.
+        :param bal1: ratio ES14/ES13
+        :param bal2: ratio ES14/ES16
+        :param sum_val: the value of the two capacitors in parallel
+        :param cap1: one of the 5 pF CAPACITOR object ES13
+        :param cap2: the other of the 5 pF CAPACITOR objects ES16
+        :param com_lead: the additional common lead when the two 5 pF caps are paralleled on the low voltage side
+        :return: value of ES13, ES16 and ES14
+        """
+        ratio1 = 1 / (self.main_ratio * 1 / (1 + self.r * (bal1[0] * self.factora + 1j * bal1[1] * self.factorb)))
+        ratio2 = 1 / (self.main_ratio * 1 / (1 + self.r * (bal2[0] * self.factora + 1j * bal2[1] * self.factorb)))
+        lead_13 = cap1.lead_correction(com_lead, self.leads['no_lead'])  # lead correction for ES13 on LV injection
+        lead_16 = cap2.lead_correction(com_lead, self.leads['no_lead'])  # lead correction for ES16 on LV injection
+        c13 = ratio2 / (ratio1 + ratio2) * (sum_val + ratio1 / ratio2 * lead_13 - lead_16)
+        c16 = ratio1 / (ratio1 + ratio2) * (sum_val + ratio2 / ratio1 * lead_16 - lead_13)
+        c14 = (ratio1 * ratio2) / (ratio1 + ratio2) * (sum_val + ratio1 / ratio2 * lead_13 - lead_16) - ratio1 * lead_13
         return c13, c16, c14
 
     def buildup(self):
+        """
+
+        This calculation strictly follows the buildup described in MSLT.E.005.03 where each of the ratio measurements
+        r1...r13 is defined. Any change such as the choice of leads or choice of reference capacitor, will need a new
+        method. It would be best to add methods named, e.g., buildup_2002() rather than to edit this method. Ultimately
+        it should be possible to use **kwargs to manage alternative buildups.
+        :return: a dictionary of CAPACITOR objects with new 'best values' set.
+        """
+        hv2 = self.leads['hv2']
+        lv2 = self.leads['lv2']
+        hv1 = self.leads['hv1']
+        lv1 = self.leads['lv1']
+        xfrm = self.leads['xfrm']
+        hv2_xfrm = CONNECT(xfrm, hv2)  # hv2 lead connected to 100:1 transformer
+        no_lead = self.leads['no_lead']
         # start with the best value for c1 (from certificate)
         self.caps['ah11c1'].set_best_value(self.ref_cap)
-        c1 = self.caps['ah11c1'].best_value - self.caps['ah11c1'].lead_correction()  # measured C slightly larger
+        c1 = self.caps['ah11c1'].best_value - self.caps['ah11c1'].lead_correction(hv2_xfrm,
+                                                                                  lv2)  # measured C slightly larger
         r4 = self.balance_dict['r4']
         a1 = self.cap_ratio(r4, c1, True)
-        self.caps['ah11a1'].set_best_value(a1 + self.caps['ah11a1'].lead_correction())  # value with no leads
+        self.caps['ah11a1'].set_best_value(a1 + self.caps['ah11a1'].lead_correction(hv1, lv1))  # value with no leads
         r5 = self.balance_dict['r5']
         b1 = self.cap_ratio(r5, c1, True)
-        self.caps['ah11b1'].set_best_value(b1 + self.caps['ah11b1'].lead_correction())  # value with no leads
+        self.caps['ah11b1'].set_best_value(b1 + self.caps['ah11b1'].lead_correction(hv1, lv1))  # value with no leads
         r6 = self.balance_dict['r6']
         a2 = self.cap_ratio(r6, c1, True)
-        self.caps['ah11a2'].set_best_value(a2 + self.caps['ah11a2'].lead_correction())  # value with no leads
+        self.caps['ah11a2'].set_best_value(a2 + self.caps['ah11a2'].lead_correction(hv1, lv1))  # value with no leads
         r7 = self.balance_dict['r7']
         b2 = self.cap_ratio(r7, c1, True)
-        self.caps['ah11b2'].set_best_value(b2 + self.caps['ah11b2'].lead_correction())  # value with no leads
+        self.caps['ah11b2'].set_best_value(b2 + self.caps['ah11b2'].lead_correction(hv1, lv1))  # value with no leads
         r8 = self.balance_dict['r8']
         g10 = self.cap_ratio(r8, c1, True)
-        self.caps['gr10'].set_best_value(g10 + self.caps['gr10'].lead_correction())  # value with no leads
+        self.caps['gr10'].set_best_value(
+            g10 + self.caps['gr10'].lead_correction(no_lead, no_lead))  # value with no leads
 
         # shift to AH11A1 as the reference to put values on all the 100 pF capacitors
-        ref2 = self.caps['ah11a1'].best_value - self.caps['ah11a1'].lead_correction()
+        ref2 = self.caps['ah11a1'].best_value - self.caps['ah11a1'].lead_correction(hv1, lv1)
         r9 = self.balance_dict['r9']
         c100 = self.cap_ratio(r9, ref2, False)  # cross check with c1 for build up consistency
         r10 = self.balance_dict['r10']
         d1 = self.cap_ratio(r10, ref2, False)
-        self.caps['ah11d1'].set_best_value(d1 + self.caps['ah11d1'].lead_correction())  # value with no leads
+        self.caps['ah11d1'].set_best_value(
+            d1 + self.caps['ah11d1'].lead_correction(hv2_xfrm, lv2))  # value with no leads
         r11 = self.balance_dict['r11']
         c2 = self.cap_ratio(r11, ref2, False)
-        self.caps['ah11c2'].set_best_value(c2 + self.caps['ah11c2'].lead_correction())  # value with no leads
+        self.caps['ah11c2'].set_best_value(
+            c2 + self.caps['ah11c2'].lead_correction(hv2_xfrm, lv2))  # value with no leads
         r12 = self.balance_dict['r12']
         d2 = self.cap_ratio(r12, ref2, False)
-        self.caps['ah11d2'].set_best_value(d2 + self.caps['ah11d2'].lead_correction())  # value with no leads
+        self.caps['ah11d2'].set_best_value(
+            d2 + self.caps['ah11d2'].lead_correction(hv2_xfrm, lv2))  # value with no leads
         r13 = self.balance_dict['r13']
         g100 = self.cap_ratio(r13, ref2, False)
-        self.caps['gr100'].set_best_value(g100 + self.caps['gr100'].lead_correction())  # value with no leads
+        self.caps['gr100'].set_best_value(
+            g100 + self.caps['gr100'].lead_correction(xfrm, no_lead))  # value with no leads
 
-        # shift to AH11C1_no_xfrm as the reference to put values on all the 1000 pF capacitors
-        ah11c1_nox = self.caps['ah11c1']
-        ah11c1_nox.set_new_leads(self.leads['hv2'], self.leads['hv1'])  # leads without transformer
-        ref3 = ah11c1_nox.best_value - ah11c1_nox.lead_correction()  # same ah11c1 capacitor different lead corrections
+        # change the leads on AH11C1 as they no longer include the 100:1 transformer
+        # same ah11c1 capacitor different lead corrections
+        ref3 = self.caps['ah11c1'].best_value - self.caps['ah11c1'].lead_correction(hv2, lv2)
         r14 = self.balance_dict['r14']
         g1000a = self.cap_ratio(r14, ref3, False)
-        self.caps['gr1000a'].set_best_value(g1000a + self.caps['gr1000a'].lead_correction())  # value with no leads
+        self.caps['gr1000a'].set_best_value(
+            g1000a + self.caps['gr1000a'].lead_correction(xfrm, no_lead))  # value with no leads
         r15 = self.balance_dict['r15']
         g1000b = self.cap_ratio(r15, ref3, False)
-        self.caps['gr1000b'].set_best_value(g1000b + self.caps['gr1000b'].lead_correction())  # value with no leads
+        self.caps['gr1000b'].set_best_value(
+            g1000b + self.caps['gr1000b'].lead_correction(xfrm, no_lead))  # value with no leads
 
         # work down to 0.5 pF
         r3 = self.balance_dict['r3']
         e1316 = self.cap_ratio(r3, c1, True)
-        # print('es1316 ', e1316.imag * 1e8)
         self.caps['es13_16'].set_best_value(e1316)  # no transformer connection
         r1 = self.balance_dict['r1']
         r2 = self.balance_dict['r2']
-        c13, c16, c14 = self.sum_ratio(r1, r2, e1316)
-        # print('answer', (c13.imag * 1e8 / 5 - 1) * 1e6, (c16.imag * 1e8 / 5 - 1) * 1e6,
-        #       (c14.imag * 1e8 / 0.5 - 1) * 1e6)
-        self.caps['es13'].set_best_value(c13)
-        self.caps['es16'].set_best_value(c16)
-        self.caps['es14'].set_best_value(c14)
-
+        # c13, c16, c14 = self.sum_ratio(r1, r2, e1316)
+        c13_2, c16_2, c14_2 = self.sum_ratio2(r1, r2, e1316, self.caps['es13'], self.caps['es16'], self.leads['xfrm'])
+        # print('c13', c13)
+        # print('c13_2', c13_2)
+        # print('c14', c14)
+        # print('c14_2', c14_2)
+        # print('c16', c16)
+        # print('c16_2', c16_2)
+        self.caps['es13'].set_best_value(c13_2)
+        self.caps['es16'].set_best_value(c16_2)
+        self.caps['es14'].set_best_value(c14_2)
         return self.caps
 
     def store_buildup(self):
+        """
 
+        Stores the capacitor name, capacitor best value in pF and CAPACITOR object in the output csv file.
+        :return: saves the output file.
+        """
         with open(self.data_out, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             for x in self.caps:
@@ -177,205 +245,35 @@ class CAPSCALE(object):
 
 
 if __name__ == '__main__':
-    scale = CAPSCALE('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore',
-                     ['in.csv', 'leads_and_caps.csv'], 'out.csv')
-    # for b in scale.balance_dict:
-    #     x = scale.cap_ratio(scale.balance_dict[b], 0.5 * (1 + 94e-6), 3)
-    #     print(x)
-    some_results = scale.buildup()
-
-    # let's do a pseudo build up starting with ES14 = +94.445 ppm
-    ES14 = 0.5 * (1 + 94.445e-6)
-    ES13 = scale.cap_ratio(scale.balance_dict['r1'], ES14, 3)
-    print('ES13 ', (ES13.real/5-1)*1e6)
-    ES16 = scale.cap_ratio(scale.balance_dict['r2'], ES14, 3)
-    print('ES16 ', (ES16.real/5-1)*1e6)
-    print('ES13+ES16',((ES13.real+ES16.real)/10-1)*1e6)
-    AH11C1 = scale.cap_ratio(scale.balance_dict['r3'], ES13 + ES16, 3)
-    print('AH11C1 ', (AH11C1.real / 100 - 1) * 1e6)
-    for l, u in budget(AH11C1.real, trim=0):
-        print(l, u)
-
-    # this confirms the basic formulas make sense
-    # next look at how to handle the capacitor and lead classes
-    # create the components to be used in the build up
-    # ideally from a csv file once everything is tested
-    print('\n', 'Full build up')
-    w = 1e4
-    relu = 0.01
-    hv1 = LEAD('ah11hv1', (286e-3, 0.782e-6), (0.28e-9, 255.2e-12), w, 0.05)
-    lv1 = LEAD('ah11lv1', (302e-3, 0.616e-6), (0.20e-9, 93.6e-12), w, 0.05)
-    hv2 = LEAD('ah11hv2', (160e-3, 0.830e-6), (0.30e-9, 260.6e-12), w, 0.05)
-    lv2 = LEAD('ah11lv2', (273e-3, 1.101e-6), (0.36e-9, 169.8e-12), w, 0.05)
-    no_lead = LEAD('no lead', (0, 0), (0, 0), w, 0.05)  # use as default when no leads are required
-    xfrm = LEAD('100 to 1', (3.7e-2, 8.1e-7), (3.4e-10, 5.24e-11), w, 0.05)
-    hv2_xfrm = CONNECT(xfrm, hv2)  # for when hv2 connects to the injection transformer
-    hv1_xfrm = CONNECT(xfrm, hv1)  # for when hv1 connects to the injection transformer
-
-    ah11a1 = CAPACITOR('AH11A1', (0.0, 10e-12), (1.62e-9, 84.2e-12), (0.72e-9, 120.8e-12), w, hv1, lv1, relu)
-    ah11b1 = CAPACITOR('AH11B1', (0.0, 10e-12), (2.48e-9, 83.6e-12), (0.70e-9, 117.5e-12), w, hv1, lv1, relu)
-    ah11c1 = CAPACITOR('AH11C1', (0.0, 100e-12), (2.06e-9, 104.1e-12), (0.57e-9, 87.7e-12), w, hv2_xfrm, lv2, relu)
-    ah11d1 = CAPACITOR('AH11D1', (0.0, 100e-12), (2.15e-9, 100.2e-12), (1.04e-9, 93.9e-12), w, hv2_xfrm, lv2, relu)
-    ah11a2 = CAPACITOR('AH11A2', (0.0, 10e-12), (1.62e-9, 84.2e-12), (0.43e-9, 119.1e-12), w, hv1, lv1, relu)
-    ah11b2 = CAPACITOR('AH11B2', (0.0, 10e-12), (1.62e-9, 77.8e-12), (0.40e-9, 112.9e-12), w, hv1, lv1, relu)
-    ah11c2 = CAPACITOR('AH11C2', (0.0, 100e-12), (1.96e-9, 101.2e-12), (0.56e-9, 104.8e-12), w, hv2_xfrm, lv2, relu)
-    ah11d2 = CAPACITOR('AH11D2', (0.0, 100e-12), (1.91e-9, 102.4e-12), (0.31e-9, 101.9e-12), w, hv2_xfrm, lv2, relu)
-
-    es14 = CAPACITOR('ES14', (0.0, 0.5e-12), (0, 0), (0, 0), w, no_lead, no_lead, relu)
-    es13 = CAPACITOR('ES13', (0.0, 5.0e-12), (8e-10, 2.05e-10), (0, 0), w, xfrm, no_lead, relu)
-    es16 = CAPACITOR('ES16', (0.0, 5.0e-12), (6e-10, 1.85e-10), (0, 0), w, xfrm, no_lead, relu)
-    gr10 = CAPACITOR('GR10', (0.0, 10.0e-12), (0, 0), (0, 0), w, no_lead, no_lead, relu)
-    gr100 = CAPACITOR('GR100', (0.0, 100.0e-12), (0, 0), (0, 0), w, no_lead, no_lead, relu)
-    gr1000a = CAPACITOR('GR1000A', (0.0, 1000.0e-12), (0, 0), (0, 0), w, xfrm, no_lead, relu)
-    gr1000b = CAPACITOR('GR1000B', (0.0, 1000.0e-12), (0, 0), (0, 0), w, xfrm, no_lead, relu)
-    es13_16 = PARALLEL(es13, es16, hv1, no_lead)
-
-    # For now the starting point is an NMIA value of AH11C1
-    cert = ucomplex((1.9e-6 * 100e-12 * 1.5915e3 + 1j * w * 99.999586e-12),(0.6e-6 * 100e-12 * 1.5915e3,
-                                                                            0.11e-6 / 2 * w * 100e-12), 50)
-    ah11c1.set_best_value(cert)  # nominal value remains as 100 pF
-    c1 = ah11c1.best_value - ah11c1.lead_correction() # measured C slightly larger than certificate value
-    r4 = scale.balance_dict['r4']
-    a1 = scale.cap_ratio(r4, c1, True)
-    ah11a1.set_best_value(a1 + ah11a1.lead_correction())  # this is the value with no leads
-    r5 = scale.balance_dict['r5']
-    b1 = scale.cap_ratio(r5, c1, True)
-    ah11b1.set_best_value(b1 + ah11b1.lead_correction())  # this is the value with no leads
-    r6 = scale.balance_dict['r6']
-    a2 = scale.cap_ratio(r6, c1, True)
-    ah11a2.set_best_value(a2 + ah11a2.lead_correction())  # this is the value with no leads
-    r7 = scale.balance_dict['r7']
-    b2 = scale.cap_ratio(r7, c1, True)
-    ah11b2.set_best_value(b2 + ah11b2.lead_correction())  # this is the value with no leads
-    r8 = scale.balance_dict['r8']
-    g10 = scale.cap_ratio(r8, c1, True)
-    gr10.set_best_value(g10 + gr10.lead_correction())  # this is the value with no leads
-
-    # shift to AH11A1 as the reference to put values on all the 100 pF capacitors
-    ref2 = ah11a1.best_value -ah11a1.lead_correction()
-    r9 = scale.balance_dict['r9']
-    c100 = scale.cap_ratio(r9, ref2, False)  # cross check with c1 for build up consistency
-    r10 = scale.balance_dict['r10']
-    d1 = scale.cap_ratio(r10, ref2, False)
-    ah11d1.set_best_value(d1 + ah11d1.lead_correction())  # this is the value with no leads
-    r11 = scale.balance_dict['r11']
-    c2 = scale.cap_ratio(r11, ref2, False)
-    ah11c2.set_best_value(c2 + ah11c2.lead_correction())  # this is the value with no leads
-    r12 = scale.balance_dict['r12']
-    d2 = scale.cap_ratio(r12, ref2, False)
-    ah11d2.set_best_value(d2 + ah11d2.lead_correction())  # this is the value with no leads
-    r13 = scale.balance_dict['r13']
-    g100 = scale.cap_ratio(r13, ref2, False)
-    gr100.set_best_value(g100 + gr100.lead_correction())  # this is the value with no leads
-
-    # shift to AH11C1_no_xfrm as the reference to put values on all the 1000 pF capacitors
-    ah11c1_nox = CAPACITOR('AH11C1_nox', (0.0, 100e-12), (2.06e-9, 104.1e-12), (0.57e-9, 87.7e-12), w, hv2, lv2, relu)
-    ref3 = ah11c1.best_value - ah11c1_nox.lead_correction()  # same capacitor different leads
-    r14 = scale.balance_dict['r14']
-    g1000a = scale.cap_ratio(r14, ref3, False)
-    gr1000a.set_best_value(g1000a + gr1000a.lead_correction())  # this is the value with no leads
-    r15 = scale.balance_dict['r15']
-    g1000b = scale.cap_ratio(r15, ref3, False)
-    gr1000b.set_best_value(g1000b + gr1000b.lead_correction())  # this is the value with no leads
-
-    # work down to 0.5 pF
-    r3 = scale.balance_dict['r3']
-    e1316 = scale.cap_ratio(r3, c1, True)
-    print('es1316 ', e1316.imag*1e8)
-    es13_16.set_best_value(e1316)  # no transformer connection
-    r1 = scale.balance_dict['r1']
-    r2 = scale.balance_dict['r2']
-    c13, c16, c14 = scale.sum_ratio(r1, r2, e1316)
-    print('answer', (c13.imag*1e8/5 - 1)*1e6, (c16.imag*1e8/5 -1)*1e6, (c14.imag*1e8/0.5-1)*1e6)
-    es13.set_best_value(c13)
-    es16.set_best_value(c16)
-    es14.set_best_value(c14)
-
-
-    print('cert ', cert.imag)
-    print('ah11c1 ', ah11c1.best_value.imag)
-    print('lead correction ah11c1 ', ah11c1.lead_correction())
-    print('c1 ', c1.imag*1e8)
-    print('a1', a1.imag*1e8)
-    print('ah11a1 ', ah11a1.best_value.imag*1e8)
-    print('ah11b1 ', ah11b1.best_value.imag*1e8)
-    print('ah11a2 ', ah11a2.best_value.imag*1e8)
-    print('ah11b2 ', ah11b2.best_value.imag*1e8)
-    print('gr10 ', gr10.best_value.imag*1e8)
-    print('c100 ', c100.imag*1e8)
-    print('ah11d1 ', ah11d1.best_value.imag * 1e8)
-    print('ah11c2 ', ah11c2.best_value.imag * 1e8)
-    print('ah11d2 ', ah11d2.best_value.imag * 1e8)
-    print('gr100 ', gr100.best_value.imag * 1e8)
-    print('gr1000a ', gr1000a.best_value.imag * 1e8)
-    print('gr1000b ', gr1000b.best_value.imag * 1e8)
-
-    # The above largely does the scale, but a lot of detail and some Y12 and Y34 values need to be sorted
-    # Also impedance of common lead for the two 5 pF capacitors.
-
-    # then correct for leads
-    # then correct for transformer
-    # ratio up and down doing lead and transformer corrections as we go
-    # look at lead summation and capacitor summation
-    value_at_end_of_leads = ah11c1.best_value - ah11c1.lead_correction()
-    print('end leads ', value_at_end_of_leads)
-    print(value_at_end_of_leads.imag/w *1e12, ' pF')
-    ah11c1_xfrm = CAPACITOR('ah11c1_xfrm',(0.0, 100e-12), (2.06e-9, 104.1e-12), (0.57e-9, 87.7e-12), w, xfrm, no_lead, relu)
-    value_with_xfrm = value_at_end_of_leads - ah11c1_xfrm.lead_correction()
-    print(value_with_xfrm.imag/w *1e12, ' pF')
-
-    print('es13_16 ', es13_16.y13.imag*1e8)
-
-    # for convenience I will create a csv file here that is essentially appropriate for loading into the BUILDUP class
-    # they should be starting with a best_value that has just been calculated
-    lead_dict = {'hv1': hv1, 'hv2': hv2, 'lv2': lv2, 'xfrm':xfrm, 'hv1_xfrm': hv1_xfrm, 'hv2_xfrm':xfrm,
-                 'no_lead': no_lead}
-    cap_dict = {'ah11a1': ah11a1, 'ah11b1': ah11b1, 'ah11c1': ah11c1, 'ah11d1': ah11d2, 'ah11a2':ah11a2,
-                'ah11b2': ah11b2, 'ah11c2': ah11c2, 'ah11d2': ah11d2, 'es14': es14, 'es13': es13, 'es16': es16,
-                'gr10': gr10, 'gr100': gr100, 'gr1000a': gr1000a, 'gr1000b': gr1000b, 'es13_16': es13_16}
-
-    my_store = COMPONENTSTORE()
-    my_data_folder = Path('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore')
-    my_output_file_name = 'leads_and_caps.csv'
-    my_data_out = my_data_folder / my_output_file_name
-    print(repr(my_data_out))
-
-    with open(my_data_out, 'w', newline='') as output_file:
-        writer = csv.writer(output_file)
-        for x in lead_dict:
-            y = my_store.lead_to_dict(lead_dict[x])  # dictionary
-            writer.writerow([x, dumps(y)])  # json string
-        for x in cap_dict:
-            y = my_store.capacitor_to_dict(cap_dict[x])
-            writer.writerow([x, dumps(y)])
-
-    print('finished saving to csv file')
-    # lead_list = []
-    # for x in lead_dict:
-    #     lead_list.append(x)
-    # print(lead_list)
-    #
-    # cap_list = []
-    # for x in cap_dict:
-    #     cap_list.append(x)
-    # print(cap_list)
-
-    cap_list = ['ah11a1', 'ah11b1', 'ah11c1', 'ah11d1', 'ah11a2', 'ah11b2', 'ah11c2', 'ah11d2', 'es14', 'es13', 'e16',
-                'gr10', 'gr100', 'gr1000a', 'gr1000b', 'es13_16']
-    lead_list = ['hv1', 'hv2', 'lv2', 'xfrm', 'hv1_xfrm', 'hv2_xfrm', 'no_lead']
-
-    recovered = {}
-
-    with open(my_data_out, newline='') as csvfile:
-        reader = csv.reader(csvfile)
-        for row in reader:
-            if row[0] in cap_list:
-                item = loads(row[1])
-                item = my_store.dict_to_capacitor(item)
-                recovered[row[0]] = item
-
-    print(type(recovered), recovered)  # recovered is a dictionary of capacitor objects
-    print(recovered['ah11b1'].best_value.imag*1e8, ' pF')
-
-    # Best value of AH11C1
-    print(dumps(my_store.capacitor_to_dict(ah11c1)))  # will have even more quotes in csv form
+    print('Derive ah11a1 from ah11c1 using balance r4')
+    w = 1e4  # rad/s
+    cap = 99.999581e-12  # pF
+    ucap = 0.11e-6  # relative expanded uncertainty, k = 2
+    dfact = 1.9e-6  # dissipation factor S/F/Hz
+    udfact = 0.6e-6  # S/F/Hz, k=2
+    g = ureal(dfact * w * cap, udfact / 2 * w * cap, 50, label='ah11c1d')
+    c = ureal(cap, cap * ucap / 2, 50, label='ah11c1c')
+    cert = g + 1j * w * c  # admittance of reference at angular frequency w
+    print('reference value for buildup =', cert)
+    final_ratio = ucomplex(10.00001763921027 + 1j * -0.0001684930432066416, (1e-10, 1e-10), df=100, label="main_ratio")
+    factora = ucomplex(1.0003093210681406 + 1j * 0.0007497042903003306, (1e-10, 1e-10), df=100, label='factora')
+    factorb = ucomplex(1.0001942917392947 + 1j * -0.00023893092658472306, (1e-10, 1e-10), df=100, label='factorb')
+    buildup = CAPSCALE(r'G:\My Drive\KJ\PycharmProjects\CapacitanceScale\datastore_improv',
+                       [r'in3.csv', r'leads_and_caps.csv'], r'out3.csv', cert,
+                       afactor=factora, bfactor=factorb, ratio=final_ratio)
+    print('reference from CAPSCALE', buildup.ref_cap)
+    ah11c1 = buildup.caps['ah11c1']
+    ah11c1.set_best_value(cert)  # force the value to cert (but doesn't change in leads_and_caps.csv
+    best = ah11c1.best_value.imag.x
+    print('reference used', best)
+    not_best = cert.imag.x
+    print('cert value', not_best)
+    hv2_xfrm = buildup.leads['hv2_xfrm']
+    lv2 = buildup.leads['lv2']
+    hv1 = buildup.leads['hv1']
+    lv1 = buildup.leads['lv1']
+    balances = buildup.balance_dict
+    r4 = balances['r4']
+    a1 = buildup.cap_ratio(r4, ah11c1.best_value - ah11c1.lead_correction(hv2_xfrm, lv2), True)
+    buildup.caps['ah11a1'].set_best_value(a1 + buildup.caps['ah11a1'].lead_correction(hv1, lv1))  # value with no leads
+    print('ah11a1', buildup.caps['ah11a1'].best_value.imag.x)

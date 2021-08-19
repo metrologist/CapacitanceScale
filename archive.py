@@ -139,7 +139,8 @@ class GTCSTORE(object):
         :param unc_dict: dictionary of parts of a GTC uncertain complex.
         :return: GTC uncertain complex
         """
-        return ucomplex(unc_dict['xreal'] +1j*unc_dict['ximag'], unc_dict['v'], unc_dict['df'], label=unc_dict['label'])
+        return ucomplex(unc_dict['xreal'] + 1j * unc_dict['ximag'], unc_dict['v'], unc_dict['df'],
+                        label=unc_dict['label'])
 
     def ucomplex_to_json(self, unc, **kwargs):
         """
@@ -155,7 +156,8 @@ class GTCSTORE(object):
             if arg == 'new_label':
                 this_label = kwargs[arg]
         chosen_label = this_label
-        return dumps({'xreal': unc.x.real, 'ximag': unc.x.imag, 'u': unc.u, 'v': unc.v, 'df': unc.df, 'label': chosen_label})
+        return dumps(
+            {'xreal': unc.x.real, 'ximag': unc.x.imag, 'u': unc.u, 'v': unc.v, 'df': unc.df, 'label': chosen_label})
 
     def json_to_ucomplex(self, unc_json):
         """
@@ -164,7 +166,8 @@ class GTCSTORE(object):
         :return: GTC uncertain complex
         """
         unc_dict = loads(unc_json)
-        return ucomplex(unc_dict['xreal'] +1j*unc_dict['ximag'], unc_dict['v'], unc_dict['df'], label=unc_dict['label'])
+        return ucomplex(unc_dict['xreal'] + 1j * unc_dict['ximag'], unc_dict['v'], unc_dict['df'],
+                        label=unc_dict['label'])
 
 
 class COMPONENTSTORE(object):
@@ -181,17 +184,16 @@ class COMPONENTSTORE(object):
         ang_freq = filed['w']
         rel_u = filed['relu']
         z = self.gs.json_to_ucomplex(filed['z'])
-        series_z = (z.x.real, z.x.imag/ang_freq)
+        series_z = (z.x.real, z.x.imag / ang_freq)
         y = self.gs.json_to_ucomplex(filed['y'])
-        parallel_y = (y.x.real, y.x.imag/ang_freq)
+        parallel_y = (y.x.real, y.x.imag / ang_freq)
         recovered_lead = LEAD(name, series_z, parallel_y, ang_freq, rel_u)
         return recovered_lead
 
     def capacitor_to_dict(self, cap):
-        to_store = {'relu': cap.relu, 'name': cap.label, 'nom_cap': (cap.y13.x.real, cap.y13.x.imag/cap.w),
-                    'yhv': (cap.y12.x.real, cap.y12.x.imag/cap.w), 'ylv': (cap.y34.x.real, cap.y34.x.imag/cap.w),
-                    'ang_freq': cap.w, 'lv_lead': self.lead_to_dict(cap.lvlead),
-                    'hv_lead': self.lead_to_dict(cap.hvlead)}
+        to_store = {'relu': cap.relu, 'name': cap.label, 'nom_cap': (cap.y13.x.real, cap.y13.x.imag / cap.w),
+                    'yhv': (cap.y12.x.real, cap.y12.x.imag / cap.w), 'ylv': (cap.y34.x.real, cap.y34.x.imag / cap.w),
+                    'ang_freq': cap.w}
         try:
             to_store['best_value'] = self.gs.ucomplex_to_json(cap.best_value)
             flag = 'best value set'
@@ -207,16 +209,15 @@ class COMPONENTSTORE(object):
         yhv = filed['yhv']
         ylv = filed['ylv']
         ang_freq = filed['ang_freq']
-        hv_lead = self.dict_to_lead(filed['hv_lead'])
-        lv_lead = self.dict_to_lead(filed['lv_lead'])
         if filed['flag'] == 'best value set':
             best_value = self.gs.json_to_ucomplex(filed['best_value'])
-            recovered_cap = CAPACITOR(name, nom_cap, yhv, ylv, ang_freq, hv_lead, lv_lead, relu)
+            recovered_cap = CAPACITOR(name, nom_cap, yhv, ylv, ang_freq, relu)  # hv_lead, lv_lead, relu)
             recovered_cap.set_best_value(best_value)
         else:
-            recovered_cap = CAPACITOR(name, nom_cap, yhv, ylv, ang_freq, hv_lead, lv_lead, relu)
+            recovered_cap = CAPACITOR(name, nom_cap, yhv, ylv, ang_freq, relu)  # hv_lead, lv_lead, relu)
 
         return recovered_cap
+
 
 if __name__ == '__main__':
     bits = COMPONENTSTORE()
@@ -227,7 +228,7 @@ if __name__ == '__main__':
     recovered_lead = bits.dict_to_lead(stored)
     print('recovered_lead', recovered_lead, type(recovered_lead))
     lv1 = LEAD('ah11lv1', (302e-3, 0.616e-6), (0.20e-9, 93.6e-12), w, 0.05)
-    ah11a1 = CAPACITOR('AH11A1', (0.0, 10e-12), (1.62e-9, 84.2e-12), (0.72e-9, 120.8e-12), w, hv1, lv1, 0.01)
+    ah11a1 = CAPACITOR('AH11A1', (0.0, 10e-12), (1.62e-9, 84.2e-12), (0.72e-9, 120.8e-12), w, 0.01)
     stored = bits.capacitor_to_dict(ah11a1)
     print('stored cap ', stored)
     recovered_cap = bits.dict_to_capacitor(stored)
@@ -317,10 +318,8 @@ if __name__ == '__main__':
     print(allmine.v)
     print(dumps(allmine.v))
     print(mine)
-    print(complex(1,1))
+    print(complex(1, 1))
     final = store.ucomplex_to_json(c7)
     print('final', final, type(final))
     final1 = store.json_to_ucomplex(final)
     print('final1', final1, type(final1))
-
-

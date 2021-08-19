@@ -44,3 +44,10 @@ class.
 Next steps are for
     1. a more 'user friendly' workflow, hiding more of the somewhat messy .csv dictionary strings
     2. implementing all the influence quantities such as voltage, temperature, pressure in the CAPACITOR class.
+    3. ultimately have a GUI to manage the workflow
+
+1. Workflow
+Shift to main.py as the primary script for analysing a scale buildup. Input data is now split into files that hold the
+readings and files that hold the values of stray immittances that are the component models. Immitance value files are
+now created with scripts using  create_component.py so that it is easier to track where the values come from. While this
+multi-csv-file approach is a bit messy, it should lend itself well to a GUI management tool.
