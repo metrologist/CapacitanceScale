@@ -1,4 +1,8 @@
 #  python 3.9 environment
+"""
+Calibrates the 10:1 voltage ratio of the HV to LV side of the capacitance bridges.
+
+"""
 from archive import COMPONENTSTORE
 from pathlib import Path
 import csv
@@ -9,13 +13,11 @@ from GTC.reporting import budget  # just for checks
 class PERMUTE(object):
     def __init__(self, file_path, input_file_names, output_file_name, **kwargs):
         """
-
         Takes the balance values of a Permutable Capacitor run and returns an uncertain complex value for the main
         10:1 ratio.
+
         :param file_path: working directlory
-        :param input_file_names: list of csv files, order sensitive, [balances s1 ... s12, leads and caps, cal factors
-        for the main dial (factora, factorb), model compenents as ucomplex impedance/admittance and values in pF of
-        each of the 11 capacitors]
+        :param input_file_names: list of csv files, order sensitive, [balances s1 ... s12, leads and caps, cal factors for the main dial (factora, factorb), model compenents as ucomplex impedance/admittance and values in pF of each of the 11 capacitors]
         :param output_file_name:
         :param kwargs:  'afactor' and 'bfactor to overide any csv file input values for factora and factorb (redundant?)
         """
@@ -101,8 +103,8 @@ class PERMUTE(object):
 
     def calc_raw_ratio(self):
         """
-
         Implements equations 37 and 46 of E.005.03
+
         :return: 10:1 voltage ratio as calculated before correcting for lead and internal impedance effects
         """
         d = []  # list of corrected balance dials as ucomplex
@@ -120,9 +122,9 @@ class PERMUTE(object):
 
     def correct_ratio(self, uncorrected_ratio):
         """
-
         Implements equation 45 of E.005.003, applying the correction for the external leads and internal components
         of the permutable capacitor model.
+
         :param uncorrected_ratio:
         :return:
         """
@@ -133,8 +135,8 @@ class PERMUTE(object):
 
     def file_ratio(self, corrected_ratio):
         """
-
         Stores a ucomplex value of the 10:1 ratio in the csv output file
+
         :param corrected_ratio: ucomplex value of the 10:1 ratio
         :return: ratio is stored in the output files together with meta data
         """

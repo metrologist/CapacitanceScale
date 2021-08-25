@@ -1,11 +1,11 @@
 """
-
-main.py  takes all input data from the calibration of the dials, the 10:1 ratio
+Takes all input data from the calibration of the dials, the 10:1 ratio
 and all the individual capacitance ratio measurements so that the results can be
 presented together with the input data in a format suitable for checking.
 
 A single buildup dataset is identified in the main.csv file that contains the names of all
 the input/output directories/files that are used in the specific calculation.
+
 """
 from cal_balance import DIALCAL  # calibration of the balance injection dials
 from cal_main_ratio import PERMUTE  # calibration of the 10:1 voltage ratio
@@ -15,7 +15,7 @@ from GTC import ureal
 from GTC.reporting import budget  # just for checks
 from summary_check import SUMMARY
 
-file_info = 'main_2.csv'  # list of directories and files
+file_info = 'main_2021-08-23_a.csv'  # list of directories and files
 file_dict = {}  # hold these directories/files in this dictionary
 with open(file_info, newline='') as csvfile:
     reader = csv.reader(csvfile)
@@ -47,12 +47,18 @@ ratio_cal.file_ratio(final_ratio)
 print()
 print('Testing the scale buildup')
 # For now the starting point is an NMIA value of AH11C1
-# Should be part of main.csv?
-w = 1e4  # rad/s
-cap = 99.999586e-12  # pF
-ucap = 0.11e-6  # relative expanded uncertainty, k = 2
-dfact = 1.9e-6  # dissipation factor S/F/Hz
-udfact = 0.6e-6  # S/F/Hz, k=2
+# Read in the reference value of AH11C
+ref_file = file_dict['Working directory'] + '/' + file_dict['Reference']
+ref_dict = {}
+with open(ref_file, newline='') as csvfile:
+    reader = csv.reader(csvfile)
+    for row in reader:
+        ref_dict[row[0]] = row[1]
+w = float(ref_dict['w'])  # rad/s
+cap = float(ref_dict['cap'])  # pF
+ucap = float(ref_dict['ucap'])  # relative expanded uncertainty, k = 2
+dfact = float(ref_dict['dfact'])  # dissipation factor S/F/Hz
+udfact = float(ref_dict['udfact'])  # S/F/Hz
 g = ureal(dfact * w * cap, udfact / 2 * w * cap, 50, label='ah11c1d')
 c = ureal(cap, cap * ucap / 2, 50, label='ah11c1c')
 cert = g + 1j * w * c  # admittance of reference at angular frequency w

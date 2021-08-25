@@ -1,4 +1,9 @@
-#  python3.8 som environment
+#  python3.9 environment
+"""
+Developed prior to latest GTC development for storing uncertain numbers. These utility classes make it easy to store
+uncertain numbers and LEAD and CAPACITOR objects as JSON strings in a csv file.
+
+"""
 from GTC import ureal, ucomplex
 from json import dumps, loads
 import csv
@@ -14,6 +19,7 @@ class GTCSTORE(object):
         Turns a GTC uncertain real into a dictionary of its parts suitable for json storage.
         Retains nothing of the structure that created the uncertain real.
         A more useful label can be used if, for instance, it is an intermediate result.
+
         :param unr: a GTC uncertain real
         :param kwargs: 'new_label' if wanted
         :return: a dictionary with all the necessary parts of the ureal
@@ -28,6 +34,7 @@ class GTCSTORE(object):
     def dict_to_ureal(self, unr_dict):
         """
         Takes a dictionary created by ureal_to_dict and creates a GTC uncertain real.
+
         :param unr_dict: dictionary of parts of a GTC uncertain real.
         :return: GTC uncertain real
         """
@@ -36,6 +43,7 @@ class GTCSTORE(object):
     def save_gtc(self, gtc_list, gtc_file):
         """
         Stores json strings in a csv file
+
         :param gtc_list: a list of json strings
         :param gtc_file: full name of a csv file
         :return: opens file, saves and closes before return
@@ -49,6 +57,7 @@ class GTCSTORE(object):
     def read_gtc(self, gtc_file):
         """
         Reads json strings in a csv file
+
         :param gtc_file: full name of a csv file
         :return: a list of json strings
         """
@@ -65,6 +74,7 @@ class GTCSTORE(object):
         Turns a GTC uncertain real into a dictionary of its parts and then into a json string for storage.
         Retains nothing of the structure that created the uncertain real.
         A more useful label can be used if, for instance, it is an intermediate result.
+
         :param unr: a GTC uncertain real
         :param kwargs: 'new_label' if wanted
         :return: a json string with all the necessary parts of a dictionary to make a ureal
@@ -79,6 +89,7 @@ class GTCSTORE(object):
     def json_to_ureal(self, unr_json):
         """
         Takes a json string as created by ureal_to_json and creates a GTC uncertain real.
+
         :param unr_json: a json string of a dictionary of parts of a GTC uncertain real.
         :return: GTC uncertain real
         """
@@ -88,6 +99,7 @@ class GTCSTORE(object):
     def save_gtc_real(self, gtc_list, gtc_file):
         """
         Stores json strings in a csv file
+
         :param gtc_list: a list of gtc uncertain reals
         :param gtc_file: full name of a csv file
         :return: opens file, saves and closes before return
@@ -105,6 +117,7 @@ class GTCSTORE(object):
     def read_gtc_real(self, gtc_file):
         """
         Reads json strings in a csv file
+
         :param gtc_file: full name of a csv file
         :return: a list of gtc uncertain reals
         """
@@ -122,6 +135,7 @@ class GTCSTORE(object):
         Turns a GTC uncertain complex into a dictionary of its parts suitable for json storage.
         Retains nothing of the structure that created the uncertain real.
         A more useful label can be used if, for instance, it is an intermediate result.
+
         :param unc: a GTC uncertain complex
         :param kwargs: 'new_label' if wanted
         :return: a dictionary with all the necessary parts of the ureal
@@ -136,6 +150,7 @@ class GTCSTORE(object):
     def dict_to_ucomplex(self, unc_dict):
         """
         Takes a dictionary created by ucomplex_to_dict and creates a GTC uncertain complex.
+
         :param unc_dict: dictionary of parts of a GTC uncertain complex.
         :return: GTC uncertain complex
         """
@@ -147,6 +162,7 @@ class GTCSTORE(object):
         Turns a GTC uncertain complex into a json string of a dictionary of its parts suitable for json storage.
         Retains nothing of the structure that created the uncertain real.
         A more useful label can be used if, for instance, it is an intermediate result.
+
         :param unc: a GTC uncertain complex
         :param kwargs: 'new_label' if wanted
         :return: a json string with all the necessary parts of the ureal
@@ -162,6 +178,7 @@ class GTCSTORE(object):
     def json_to_ucomplex(self, unc_json):
         """
         Takes a json string created by ucomplex_to_json and creates a GTC uncertain complex.
+
         :param unc_json: json string of a dictionary of parts of a GTC uncertain complex.
         :return: GTC uncertain complex
         """
@@ -172,14 +189,31 @@ class GTCSTORE(object):
 
 class COMPONENTSTORE(object):
     def __init__(self):
+        """
+        Uses GTCSTORE methods to save LEAD and CAPACITOR objects as JSON strings in CSV files. The methods are
+        accessed through self.gs
+
+        """
         self.gs = GTCSTORE()
 
     def lead_to_dict(self, lead):
+        """
+        Converts a LEAD object into a dictionary
+
+        :param lead: a LEAD object
+        :return: a dictionary of LEAD components
+        """
         to_store = {'relu': lead.relu, 'w': lead.w, 'label': lead.label, 'z': self.gs.ucomplex_to_json(lead.z),
                     'y': self.gs.ucomplex_to_json(lead.y)}
         return to_store
 
     def dict_to_lead(self, filed):  # A more dictionary version of the LEAD class could simplify this
+        """
+        Recovering a LEAD object from a dictionary.
+
+        :param filed: a dictionary that was created by lead_to_dict
+        :return: LEAD object
+        """
         name = filed['label']
         ang_freq = filed['w']
         rel_u = filed['relu']
@@ -191,6 +225,12 @@ class COMPONENTSTORE(object):
         return recovered_lead
 
     def capacitor_to_dict(self, cap):
+        """
+        Converts a CAPACITOR object into a dictionary.
+
+        :param cap: a CAPACITOR object
+        :return: a dictionary of CAPACITOR components
+        """
         to_store = {'relu': cap.relu, 'name': cap.label, 'nom_cap': (cap.y13.x.real, cap.y13.x.imag / cap.w),
                     'yhv': (cap.y12.x.real, cap.y12.x.imag / cap.w), 'ylv': (cap.y34.x.real, cap.y34.x.imag / cap.w),
                     'ang_freq': cap.w}
@@ -203,6 +243,12 @@ class COMPONENTSTORE(object):
         return to_store
 
     def dict_to_capacitor(self, filed):
+        """
+        Recovers a CAPACITOR object from a dictionary created by capacitor_to_dict.
+
+        :param filed: a dictionary created by capacitor_to_dict
+        :return: a CAPACITOR object
+        """
         relu = filed['relu']
         name = filed['name']
         nom_cap = filed['nom_cap']

@@ -1,3 +1,11 @@
+# Python 3.9 environment
+"""
+Summarises all the input and output data into a 'human readable' format in a single csv file. This summary file is also
+appropriate for viewing with a spreadsheet program which can be used to support the checking process and plotting
+of historical values. It can also provide an updated file LEAD and CAPACITOR objects for input to the next capacitance
+calibration run.
+
+"""
 import csv
 import os
 from json import loads
@@ -11,6 +19,7 @@ class SUMMARY(object):
         SUMMARY creates a single csv file that contains all the input data and calculated results in a human readable
         format. This is a convenience for checking purposes noting that the full results are stored in csv files as
         json strings holding uncertain numbers.
+
         :param file_list: the list of input and output csv files identical to that used for the main calculation
 
         """
@@ -23,10 +32,10 @@ class SUMMARY(object):
 
     def create_summary(self, update):
         """
+        Step by step acquiring of data and results to put in the output csv file
 
         :param update: boolean set to True if an updated leads and caps file is also wanted
-        :return: a summary csv placed in the working directory and named 'summary' + the 'Scale output' name and, if
-        update is set to True, an updated file 'Leads and caps' name + 'updated' .csv.
+        :return: a summary csv placed in the working directory and named 'summary' + the 'Scale output' name and, if update is set to True, an updated file 'Leads and caps' name + 'updated' .csv.
         """
         if update:  # updated leads and caps wanted
             l_c_file_update = self.file_dict['Working directory'] + '/' + self.file_dict['Leads and caps'][:-4] + \
@@ -35,7 +44,7 @@ class SUMMARY(object):
             l_c_update = [['Leads']]  # header for the leads section
 
         store = COMPONENTSTORE()
-        hr_file = os.path.join(self.file_dict['Working directory'], 'summary_' + self.file_dict['Scale output'])
+        hr_file = os.path.join(self.file_dict['Working directory'], 'summary_' + self.file_list)
         hr_output = []
         # Files used to make this summary
         hr_output.append(['File information for this summary'])
@@ -91,7 +100,6 @@ class SUMMARY(object):
                 elif row[0] in ['pc1', 'pc2', 'pc3', 'pc4', 'pc5', 'pc6', 'pc7', 'pc8', 'pc9', 'pc10', 'pc11']:
                     hr_output.append([row[0], row[1]])
                 else:
-                    # print('troublesome item', row[0], row[1])
                     item = store.gs.dict_to_ucomplex(loads(row[1]))
                     hr_output.append([row[0], item.real.x, item.imag.x])
         hr_output.append([])  # just to space between the outputs
@@ -135,7 +143,6 @@ class SUMMARY(object):
             jdata = loads(x[2])
             bb = store.dict_to_capacitor(jdata)  # components.CAPACITOR object
             cap = (bb.best_value.imag / bb.w * 1e12).x  # in pF
-            print(x[0], bb.best_value.imag.u/bb.best_value.imag.x)  # temporary
             unc = [bb.best_value.u[0] * 1.0e9, bb.best_value.u[1] / bb.w * 1e12]  # in nS and pF
             output.append(bb.label)
             output.append(cap)
@@ -178,6 +185,8 @@ class SUMMARY(object):
                             hr_output.append(['Leads'])
                             hr_output.append(['Name', 'rel unc', 'ang freq', 'C pF', 'G nS', 'r ohm', 'l microH'])
                             h2 += 1
+                            if update:
+                                l_c_update.append(row)
                         elif update:  # adds unaltered leads to the update file
                             l_c_update.append(row)
                         bb = store.dict_to_lead(jdata)
@@ -185,7 +194,6 @@ class SUMMARY(object):
                         for_summary = [row[0], bb.relu, bb.w, bb.y.imag.x / angf * 1e12, bb.y.real.x * 1e9, bb.z.real.x,
                                        bb.z.imag.x / angf * 1e6]
                     hr_output.append(for_summary)
-
         with open(hr_file, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             for x in hr_output:
@@ -200,7 +208,6 @@ class SUMMARY(object):
                     new_row = [row[0], row[2]]  # miss out the pF value, just keep the ucomplex value
                     l_c_update.append(new_row)
 
-            print(l_c_update)
             with open(l_c_file_update, 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 for x in l_c_update:

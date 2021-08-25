@@ -1,4 +1,9 @@
 #  python3.9 environment
+"""
+Measures the ratios of all the capacitors following the steps given in technical procedure E.005.003 to establish
+values of capacitors from 0.5 pF to 1000 pF.
+
+"""
 from archive import GTCSTORE, COMPONENTSTORE
 from pathlib import Path
 import csv
@@ -11,15 +16,14 @@ from json import dumps, loads
 class CAPSCALE(object):
     def __init__(self, file_path, input_files, output_file_name, ref_value, **kwargs):
         """
-
         Takes in all the measurement information from the input files and has methods to calculate the values of all the
         capacitors in the buildup based on the assumed value of the reference capacitor.
+
         :param file_path: the sub-folder that holds all the csv files
         :param input_files: a list of file names for dial factors, 10:1 ratio, leads, capacitors and balance readings
         :param output_file_name: csv file for calculated values of all the capacitors
         :param ref_value is the up to date value of AH11C1 (derived from external calibration history)
-        :param kwargs: allows values of 'afactor', 'bfactor' and 'ratio' to be entered directly rather than extracted
-        from the input files. This is used when the whole buildup calculation is done in a single run in main.py
+        :param kwargs: allows values of 'afactor', 'bfactor' and 'ratio' to be entered directly rather than extracted from the input files. This is used when the whole buildup calculation is done in a single run in main.py
         """
         self.ref_cap = ref_value
         self.output_name = output_file_name  # optional store in a csv file
@@ -82,8 +86,8 @@ class CAPSCALE(object):
 
     def cap_ratio(self, balance, cap, inverse):
         """
-
         Equation 46,47 of E.005.003
+
         :param balance: the tuple of balance dial values
         :param cap: the 'known' capacitor in the ratio
         :param inverse: boolean when true to divide capacitor by the ratio
@@ -98,10 +102,10 @@ class CAPSCALE(object):
 
     def sum_ratio(self, bal1, bal2, sum_val):
         """
-
         Calculates the value of the two 5 pF capacitors (ES 13 and ES16) from knowing the value of the two in parallel
         and their difference in ratio when individually balanced against the 0.5 pF (ES14). Equations 19 to 21 of
         E.005.003. Preferred method is sum_ratio2 that includes the effect of connecting to the injection transformer.
+
         :param bal1: ratio ES14/ES13
         :param bal2: ratio ES14/ES16
         :param sum_val: the value of the two capacitors in parallel
@@ -116,11 +120,11 @@ class CAPSCALE(object):
 
     def sum_ratio2(self, bal1, bal2, sum_val, cap1, cap2, com_lead):
         """
-
         Calculates the value of the two 5 pF capacitors (ES13 and ES16) from knowing the value of the two in parallel
         and their difference in ratio when individually balanced against the 0.5 pF (ES14). The 5 pF capacitors connect
         directly to the HV side when measured against a 100 pF capacitor, but are on the LV side with the injection
         transformer (xfrm LEAD) when being compared to the 0.5 pF capacitor. E005.003 does not have these formulae.
+
         :param bal1: ratio ES14/ES13
         :param bal2: ratio ES14/ES16
         :param sum_val: the value of the two capacitors in parallel
@@ -140,11 +144,11 @@ class CAPSCALE(object):
 
     def buildup(self):
         """
-
         This calculation strictly follows the buildup described in MSLT.E.005.03 where each of the ratio measurements
         r1...r13 is defined. Any change such as the choice of leads or choice of reference capacitor, will need a new
         method. It would be best to add methods named, e.g., buildup_2002() rather than to edit this method. Ultimately
         it should be possible to use **kwargs to manage alternative buildups.
+
         :return: a dictionary of CAPACITOR objects with new 'best values' set.
         """
         hv2 = self.leads['hv2']
@@ -229,8 +233,8 @@ class CAPSCALE(object):
 
     def store_buildup(self):
         """
-
         Stores the capacitor name, capacitor best value in pF and CAPACITOR object in the output csv file.
+
         :return: saves the output file.
         """
         with open(self.data_out, 'w', newline='') as csvfile:

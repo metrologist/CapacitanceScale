@@ -1,4 +1,9 @@
 #  python 3.9 environment
+"""
+Component creation is not required for routine capacitance scale measurements but is part of the maintenance process
+when leads are changed or new capacitors brought into the scale.
+
+"""
 import csv
 from GTC import ucomplex
 from archive import COMPONENTSTORE
@@ -9,7 +14,6 @@ from json import dumps
 class CREATOR(object):
     def __init__(self, working_directory, input_files, output_files):
         """
-
         Component models are managed with the classes in components.py with the measured values held in various csv
         files. While it can be convenient to enter new values by directly editing json string representations of
         ucomplex etc., it is safer to create these files by entering values directly from measurements recorded in lab
@@ -23,6 +27,7 @@ class CREATOR(object):
         results placed in csv files.
 
         Some information could be in an input file, but in general only the output file is required.
+
         :param working_directory: assume a common working directory
         :param input_files: not yet used as values are in the code and easy to edit
         :param output_files: name chosen to match the purpose
@@ -32,8 +37,8 @@ class CREATOR(object):
 
     def create_permutable(self, permutable_header):
         """
-
         Latest values are entered by editing the values in the code for this method.
+
         :param permutable_header: string that identifies the source of the information
         :return: creates a csv file of the model of the permutable capacitor
         """
@@ -120,8 +125,8 @@ class CREATOR(object):
 
     def create_leads(self, header):
         """
-
         All the measured values are in the lists in this method.
+
         :param header: single line meta_data
         :return: creates a csv file of the lead models
         """
@@ -144,8 +149,8 @@ class CREATOR(object):
 
     def create_capacitors(self, header):
         """
-
         All the measured values are in the lists created in this method
+
         :param header: the string to title the block of capacitors in the output csv
         :return: appends to the file created by create_leads
         """
@@ -180,8 +185,8 @@ class CREATOR(object):
 
     def create_output(self, header, input_dict_list, new):
         """
-
         Generic csv writer
+
         :param header: string to include key meta-data
         :param input_dict_list: each dictionary value is written as a row of the key and the value of the key
         :param new: boolean set True for to write a new file or overwrite the file, when False it appends data

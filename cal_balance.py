@@ -1,4 +1,8 @@
-#  python3.8 som environment
+#  python3.9
+"""
+Calibrates the dials used for the alpha and beta values of all ratio measurements.
+
+"""
 from archive import GTCSTORE, COMPONENTSTORE
 from pathlib import Path
 import csv
@@ -12,14 +16,15 @@ class DIALCAL(object):
         alpha dial at full scale. The second set primarily balances the beta dial at full scale. Calibration is at the
         single frequency of 10000 radians per second. See Appendix A1 of E.005.03.
         Each data set comprises
+
         k: the setting of the 7 dial IVD
         r: the ratio of the injection transformer used
         Y1: the capacitor connected to the 7 dial IVD
         Y2 or Y3: the capacitor or resistor connected to the balance dials (alpha at 1, beta at 1 respectively)
         alpha and beta dial settings for balance
+
         :param file_path: directory for data in/out
-        :param input_file_names: list of files, first is csv with dial settings and components, second has component
-        values.
+        :param input_file_names: list of csv files [dial settings and component names, components]
         :param output_file_name: output can be stored in this csv file (same directory)
         """
         self.output_name = output_file_name  # optional store in a csv file
@@ -75,6 +80,7 @@ class DIALCAL(object):
     def dialfactors(self, **kwargs):
         """
         This contains the critical calculation.
+
         :param kwargs: booleans file_output and append give a choice on whether to produce a file, either append or new
         :return: returns the two uncertain complex values of the two dial factors
         """

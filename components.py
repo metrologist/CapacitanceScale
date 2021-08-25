@@ -1,22 +1,23 @@
 #  python3.9 environment
+"""
+Two terminal-pair equivalent circuits for coaxial leads and capacitors are structured as Python objects. For leads
+this is a simple series impedance and parallel admittance of the coaxial cable. For capacitors it includes the
+admittances to screen.
+
+"""
 from GTC import ucomplex
 from GTC.reporting import budget  # just for checks
-
-"""
-Develop classes and methods for dealing efficiently with lead corrections in impedance bridges.
-"""
-
 
 class LEAD(object):
     def __init__(self, name, series_z, parallel_y, ang_freq, rel_u):
         """
-
         Pi transform of a cable
+
         :param name: label to identify cable
         :param series_z: series impedance as tuple of resistance (ohm) and inductance (H)
         :param parallel_y: admittance of cable as tuple of conductance (S) and capacitance (F)
         :param ang_freq: angular frequency in radians per second
-        :param rel_u a default relative uncertainty in the L, R, C values (could be nuanced)
+        :param rel_u: a default relative uncertainty in the L, R, C values (could be nuanced)
         """
         self.relu = rel_u
         self.w = ang_freq
@@ -30,10 +31,10 @@ class LEAD(object):
 class CONNECT(object):
     def __init__(self, lead1, lead2):
         """
-
         Connects two LEAD objects in series with the assumption that they are two similar coaxial leads differing only
         in length. This allows the transformer lead to simply be added to the hv lead on the low voltage side of
         the 10:1 ratio.
+
         :param lead1: LEAD object
         :param lead2: LEAD object
         """
@@ -49,15 +50,15 @@ class CONNECT(object):
 class CAPACITOR(object):
     def __init__(self, name, nom_cap, yhv, ylv, ang_freq, rel_u, **kwargs):
         """
-
         Two terminal-pair capacitor. Components entered as C and G but stored as admittances for the given angular
          frequency. The lead corrections is calculated using the nominal value of the capacitor.
+
         :param name: label to identify capacitor
         :param nom_cap: the main capacitor as a tuple of conductance and capacitance, nominal value
         :param yhv: additional admittance to screen at the HV terminal as a tuple of G and C
         :param ylv: additional admittance to screen at the LV terminal as a tuple of G and C
         :param ang_freq: angular frequency, w, in radians per second
-        :param rel_u a default 1% relative uncertainty in measured C, G values for yhv and ylv (should nuance?).
+        :param rel_u: a default 1% relative uncertainty in measured C, G values for yhv and ylv (should nuance?).
         :param kwargs: best_value = the best calculated value as a ucomplex in the build up
         """
         self.relu = rel_u  #
@@ -76,6 +77,7 @@ class CAPACITOR(object):
     def lead_correction(self, hvlead, lvlead):
         """
         connects the hv and lv leads to capacitor and calculates the modified value of the capacitor
+
         :param hvlead: a LEAD object connected at the high potential terminal 1-2
         :param lvlead: a LEAD object connected at the low potential terminal 3-4
         :return: ucomplex correction so that true Y = measured Y + correction
@@ -95,8 +97,9 @@ class CAPACITOR(object):
         """
         Replaces the instantiated self.best_value with a ucomplex value. This might be a convenience if an updated
         version of a specific instance of CAPACITOR needs to be stored.
-        :param value:
-        :return:
+
+        :param value: ucomplex admittance value
+        :return: the best value is reset
         """
         self.best_value = value
         return
@@ -105,12 +108,12 @@ class CAPACITOR(object):
 class PARALLEL(object):
     def __init__(self, cap1, cap2):
         """
-
         Specifically for putting the two 5 pF capacitors in parallel with the original hv leads in parallel. It is
         assumed that there is no additional common lead, i.e. they plug directly into the LV transformer and common
         detector junction.
-        :param cap1:
-        :param cap2:
+
+        :param cap1: CAPACITOR object
+        :param cap2: CAPACITOR object
         """
         assert cap1.w == cap2.w, 'Both CAPACITOR objects must be defined at same frequency'
         self.w = cap1.w
@@ -124,6 +127,7 @@ class PARALLEL(object):
     def lead_correction(self, hvlead, lvlead):
         """
         Connects the hv and lv leads to capacitor and calculates the modified value of the capacitor
+
         :param hvlead: LEAD object for the common hv lead
         :param lvlead:  LEAD object for the common lv lead
         :return: ucomplex correction so that true Y = measured Y + correction
@@ -143,8 +147,9 @@ class PARALLEL(object):
         """
         Replaces the instantiated self.best_value with a ucomplex value. This might be a convenience if an updated
         version of a specific instance of CAPACITOR needs to be stored.
-        :param value:
-        :return:
+
+        :param value: ucomplex value of admittance
+        :return: value is set in the PARALLEL object
         """
         self.best_value = value
         return
