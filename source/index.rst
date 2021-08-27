@@ -95,6 +95,10 @@ Archive
 .. autoclass:: COMPONENTSTORE
    :members:
 
+Software Environment
+====================
+
+.. include:: guide2.rst
 
 Indices and tables
 ==================
