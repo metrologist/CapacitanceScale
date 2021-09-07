@@ -1,12 +1,16 @@
-Date,23-Dec-20,,
+Date,23-Dec-20
 Reference,Minyu Test f@21/12/2020), beta, k)  and 165(100kOhm # 2 R)
-w,1.00E+04,,
-alpha1,"{""x"": 0.999772, ""u"": 2e-06, ""df"": Infinity, ""label"": ""alpha1""}",,
-beta1,"{""x"": -0.000721, ""u"": 2e-06, ""df"": Infinity, ""label"": ""beta1""}",,
-alpha2,"{""x"": -0.000260, ""u"": 2e-06, ""df"": Infinity, ""label"": ""alpha2""}",,
-beta2,"{""x"": 1.001840, ""u"": 2e-06, ""df"": Infinity, ""label"": ""beta1""}",,
-r,0.01,,
-k,0.2,,
-c1,es14,,
-c2,gr1000b,,
-z3,"{""xreal"": 100193.92, ""ximag"":1.4e-10,  ""u"": [0.1, 5e-15], ""v"": [0.01, 0.0, 0.0, 2.5e-29], ""df"": Infinity, ""label"": ""100k2""}",,
+w,1.00E+04
+alpha1,"{""x"": 0.999772, ""u"": 2e-06, ""df"": Infinity, ""label"": ""alpha1""}"
+beta1,"{""x"": -0.000721, ""u"": 2e-06, ""df"": Infinity, ""label"": ""beta1""}"
+alpha2,"{""x"": -0.000260, ""u"": 2e-06, ""df"": Infinity, ""label"": ""alpha2""}"
+beta2,"{""x"": 1.001840, ""u"": 2e-06, ""df"": Infinity, ""label"": ""beta1""}"
+r,0.01
+k,0.2
+c1,es14
+c2,gr1000b
+label y3,100k2
+r3,100.19392e3
+ur3,0.1
+c3,0.0163e-12
+uc3,0.001e-12

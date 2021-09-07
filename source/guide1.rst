@@ -59,8 +59,9 @@ entry needs to match (can automate this once we are sure the naming system is fi
 
 All the input files are structured by example.
 
-For calibrating the dials, dialcal_in_2019-10-16_a.csv, which somewhat clumsily enters the values direct into
-dictionary strings.
+For calibrating the dials, dialcal_in_2019-10-16_a.csv, which somewhat clumsily enters the alpha and beta values direct
+into json dictionary strings. Y3 is entered as the dc resistance r3 (measured with a DMM) and the parallel capacitance
+c3 indicated on the phase angle standard.
 
 .. code-block:: csv
 
@@ -75,10 +76,15 @@ dictionary strings.
    k,0.2000000
    c1,es14
    c2,gr1000b
-   z3,"{""xreal"": 99724.19, ""ximag"":1.4e-10,  ""u"": [0.1, 5e-15], ""v"": [0.01, 0.0, 0.0, 2.5e-29], ""df"": Infinity, ""label"": ""100k4""}"
+   label y3,100k4
+   r3,99.72419e3
+   ur3,0.1
+   c3,0.0140e-12
+   uc3,0.001e-12
 
 The values of capacitors c1 and c2 are found in comp_leads_caps_2019-10-16.csv that is created by create_component.py
-by manually entering values into its code.
+by manually entering values into its code. The dc resistance, r, and ac parallel capacitance, c, of the resistor is used to
+calculate the value of Y3 as 1/r + j w c.
 
 .. code-block:: csv
 

@@ -15,7 +15,7 @@ from GTC import ureal
 from GTC.reporting import budget  # just for checks
 from summary_check import SUMMARY
 
-file_info = 'main_2021-08-23_a.csv'  # list of directories and files
+file_info = 'main_2021-09-07_a.csv'  # list of directories and files
 file_dict = {}  # hold these directories/files in this dictionary
 with open(file_info, newline='') as csvfile:
     reader = csv.reader(csvfile)

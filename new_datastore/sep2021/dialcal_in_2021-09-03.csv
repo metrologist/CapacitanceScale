@@ -1,0 +1,16 @@
+Date,03-Sep-21
+Reference,KJ Lab Diary 2, p.126-127, 100k #2, beta dial capacitor and transformer capacitor in place
+w,1.00E+04
+alpha1,"{""x"": 0.999730, ""u"": 2e-06, ""df"": Infinity, ""label"": ""alpha1""}"
+beta1,"{""x"": -0.000580, ""u"": 2e-06, ""df"": Infinity, ""label"": ""beta1""}"
+alpha2,"{""x"": -0.000400, ""u"": 2e-06, ""df"": Infinity, ""label"": ""alpha2""}"
+beta2,"{""x"": 1.001800, ""u"": 2e-06, ""df"": Infinity, ""label"": ""beta2""}"
+r,0.01
+k,0.2
+c1,es14
+c2,gr1000b
+label y3,100k2
+r3,100.19375e3
+ur3,0.1
+c3,0.0163e-12
+uc3,0.001e-12
