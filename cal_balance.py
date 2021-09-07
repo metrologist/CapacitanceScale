@@ -7,6 +7,7 @@ from archive import GTCSTORE, COMPONENTSTORE
 from pathlib import Path
 import csv
 from json import loads
+from GTC import ureal
 from GTC.reporting import budget  # just for checks
 
 class DIALCAL(object):
@@ -31,6 +32,7 @@ class DIALCAL(object):
         self.store = GTCSTORE()
         self.data_folder = Path(file_path)
         data_in = self.data_folder / input_file_names[0]
+        label_y3 = 'y3 label not in csv file'  # avoiding 'label_y3 referenced before assignment' error
         with open(data_in, newline='') as csvfile:  # format must be correct
             reader = csv.reader(csvfile)
             counter = 0
@@ -58,11 +60,19 @@ class DIALCAL(object):
                     c1 = row[1]  #self.store.json_to_ucomplex(row[1])
                 elif row[0] == 'c2':
                     c2 = row[1]  #self.store.json_to_ucomplex(row[1])
-                elif row[0] == 'z3':
-                    z3 = self.store.json_to_ucomplex(row[1])  # z3 stored as json ucomplex dictionary
+                elif row[0] == 'label z3':
+                    label_y3 = row[1]
+                elif row[0] == 'r3':
+                    r3 = float(row[1])
+                elif row[0] == 'ur3':
+                    ur3 = float(row[1])
+                elif row[0] == 'c3':
+                    c3 = float(row[1])
+                elif row[0] == 'uc3':
+                    uc3 = float(row[1])
                 else:
                     print('This row does not match. Wrong csv file? ', row)
-        assert counter == 12, "csv file incorrect length, should be 12 rows:  %r" % counter
+        assert counter == 16, "csv file incorrect length, should be 16 rows:  %r" % counter
         # get the latest values of c1 and c2 from 'leads_and_caps.csv'
         data_in = self.data_folder / input_file_names[1]
         with open(data_in, newline='') as csvfile:  # format must be correct
@@ -73,9 +83,11 @@ class DIALCAL(object):
                 elif row[0] == c2:
                     c2 = row[1]
         cstore = COMPONENTSTORE()
+        r3 = ureal(r3, ur3, label=label_y3 + 'r3_resistance')
+        c3 = ureal(c3, uc3, label=label_y3 + 'r3_capacitance')
         self.Y1 = cstore.dict_to_capacitor(loads(c1)).best_value  # loads(c1) is a components.CAPACITOR object
         self.Y2 = cstore.dict_to_capacitor(loads(c2)).best_value  # loads(c1) is a components.CAPACITOR object
-        self.Y3 = 1 / z3  # e.g. 1/(100k #4) but note loss angle assumes 1.6 kHz
+        self.Y3 = 1 / r3 + 1j * self.w * c3  # G + jwC form
 
     def dialfactors(self, **kwargs):
         """
