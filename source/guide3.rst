@@ -1,5 +1,4 @@
-A testing framework is required. To date code following if __name__ == '__main__': has been relied on to confirm
-performance, but this is not sufficiently robust for future development.
+Further expansion of these tests is desirable.
 
 The components module (CAPACITOR and LEAD classes) can be improved with the addition of
 

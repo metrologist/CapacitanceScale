@@ -1,0 +1,10 @@
+Working directory,new_datastore\sep2021
+Dial input,dialcal_in_2021-09-03.csv
+Dial output,dialcal_out_2021-09-03.csv
+Permutable,comp_permute_2021-09-02.csv
+Ratio input,ratiocal_in_2021-09-09.csv
+Ratio output,ratiocal_out_2021-09-09.csv
+Scale input,capcal_in_2021-09-09.csv
+Scale output,capcal_out_2021-09-09.csv
+Leads and caps,comp_leads_caps_2021-09-02.csv
+Reference,reference_val_2021-08-24.csv

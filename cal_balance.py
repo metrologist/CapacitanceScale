@@ -7,7 +7,7 @@ from archive import GTCSTORE, COMPONENTSTORE
 from pathlib import Path
 import csv
 from json import loads
-from GTC import ureal
+from GTC import ureal, variance
 from GTC.reporting import budget  # just for checks
 
 class DIALCAL(object):
@@ -124,15 +124,20 @@ class DIALCAL(object):
 
 if __name__ == '__main__':
     print('Testing cal_balance.py')
-    cal_dials = DIALCAL('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\datastore_12_2020',
-                        ['test3.csv', 'leads_and_caps.csv'], 'out_test3.csv')
+    cal_dials = DIALCAL('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\tests\\files_for_test',
+                        ['dialcal_in_2021-09-03.csv', 'comp_leads_caps_2021-09-02.csv'], 'dial_factor_out.csv')
     factora, factorb = cal_dials.dialfactors(file_output=True, append=False)
     print('factora', factora, type(factora))
+    print(factora.x)
+    print(factora.u)
+    print(factora.r)
+    print(variance(factora))
     print('factorb', factorb, type(factorb))
-    keith = factora.imag
-    print(repr(keith))
-    print('budget')
-    print(factorb.imag)
-    print(factorb.imag.u)
-    for l, u in budget(factorb.imag, trim=0):
-        print(l, u)
+    print(factorb.x)
+    # keith = factora.imag
+    # print(repr(keith))
+    # print('budget')
+    # print(factorb.imag)
+    # print(factorb.imag.u)
+    # for l, u in budget(factorb.imag, trim=0):
+    #     print(l, u)

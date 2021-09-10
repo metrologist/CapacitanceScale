@@ -150,26 +150,34 @@ class PERMUTE(object):
 
 if __name__ == '__main__':
     print('Testing cal_main_ratio.py')
-    ratio_cal = PERMUTE('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\data_store_test',
-                        ['perm2.csv', 'leads_and_caps.csv', 'out_test3.csv', 'comp_permute.csv'], 'out_perm2.csv')
-    print(ratio_cal.balance_dict)
+    ratio_cal = PERMUTE('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\tests\\files_for_test',
+                        ['ratiocal_in_2021-09-03.csv', 'comp_leads_caps_2021-09-02.csv', 'dial_factor_out.csv',
+                         'comp_permute_2021-09-02.csv'], 'ratiocal_out_2021-09-03.csv')
+    # print(ratio_cal.balance_dict)
     raw_ratio = ratio_cal.calc_raw_ratio()
-    print(repr(raw_ratio))
+    print('raw ratio', repr(raw_ratio))
+    print(raw_ratio.x)
+    print(raw_ratio.u)
     print((raw_ratio/10-1) * 1e6)
-    print('budget')
-    for l, u in budget(raw_ratio.real, trim=0):
-        print(l, u)
     main_ratio = ratio_cal.correct_ratio(raw_ratio)
-    print(main_ratio)
-    final_ratio = ratio_cal.correct_ratio(main_ratio)
-    print('final ratio ', repr(final_ratio))
-
-    store = ratio_cal.store
-    ratio_for_file = store.gs.ucomplex_to_json(final_ratio, new_label='main_ratio')
-    main_ratio = store.gs.json_to_ucomplex(ratio_for_file)
-    print('main ratio', repr(main_ratio))
-    print('budget')
-    for l, u in budget(final_ratio.real, trim=0):
-        print(l, u)
-
-    ratio_cal.file_ratio(final_ratio)
+    print('main ratio',repr(main_ratio))
+    print(main_ratio.x)
+    print(main_ratio.u)
+    # print('budget')
+    # for l, u in budget(raw_ratio.real, trim=0):
+    #     print(l, u)
+    # main_ratio = ratio_cal.correct_ratio(raw_ratio)
+    # print(main_ratio)
+    # final_ratio = ratio_cal.correct_ratio(main_ratio)
+    # print('main ratio ', repr(final_ratio))
+    # print(final_ratio.x)
+    #
+    # store = ratio_cal.store
+    # ratio_for_file = store.gs.ucomplex_to_json(final_ratio, new_label='main_ratio')
+    # main_ratio = store.gs.json_to_ucomplex(ratio_for_file)
+    # print('main ratio', repr(main_ratio))
+    # print('budget')
+    # for l, u in budget(final_ratio.real, trim=0):
+    #     print(l, u)
+    #
+    # ratio_cal.file_ratio(final_ratio)

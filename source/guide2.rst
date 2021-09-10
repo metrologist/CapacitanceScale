@@ -13,3 +13,10 @@ command requirements so remember to check that your modifications appear correct
 failing to delete the old html folders will result in an error when running make html. The /source directory also
 contains conf.py. This can be edited to alter the source directory for the project as well as the settings for
 extensions and themes used by Sphinx.
+
+Testing
+-------
+The scripts and data for testing are in the testing folder. The test suite is run from the miniconda command line by
+navigating to \CapacitanceScale\tests folder and running pytest.
+
+.. image:: pytest.png

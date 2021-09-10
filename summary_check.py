@@ -24,7 +24,7 @@ class SUMMARY(object):
 
         """
         self.file_dict = {}  # hold these directories/files in this dictionary
-        with open(file_list, newline='') as csvfile:
+        with open(os.path.join(os.getcwd(), 'run_lists', file_list), newline='') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
                 self.file_dict[row[0]] = row[1]

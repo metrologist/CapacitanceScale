@@ -14,17 +14,18 @@ import csv
 from GTC import ureal
 from GTC.reporting import budget  # just for checks
 from summary_check import SUMMARY
+import os
 
-file_info = 'main_2021-09-07_a.csv'  # list of directories and files
+cwd = os.getcwd()  # get the current working directory
+file_info = 'main_2021-09-10.csv'  # list of directories and files, also used to name the summary file
 file_dict = {}  # hold these directories/files in this dictionary
-with open(file_info, newline='') as csvfile:
+cwd_file_info = os.path.join(cwd, 'run_lists', file_info)
+with open(cwd_file_info, newline='') as csvfile:
     reader = csv.reader(csvfile)
     for row in reader:
         file_dict[row[0]] = row[1]
-print('Dictionary of files', file_dict)
-print()
-print('Testing cal_balance.py')
-cal_dials = DIALCAL(file_dict['Working directory'],
+
+cal_dials = DIALCAL(os.path.join(cwd, file_dict['Working directory']),
                     [file_dict['Dial input'], file_dict['Leads and caps']], file_dict['Dial output'])
 factora, factorb = cal_dials.dialfactors(file_output=True, append=False)
 
@@ -32,7 +33,7 @@ factora, factorb = cal_dials.dialfactors(file_output=True, append=False)
 # This means that cal_main_ratio.py is now modified to read the factors from from above ('Dial output')
 # rather than 'Ratio input'. This needs to be tidied up
 print('Testing cal_main_ratio.py')
-ratio_cal = PERMUTE(file_dict['Working directory'],
+ratio_cal = PERMUTE(os.path.join(cwd, file_dict['Working directory']),
                     [file_dict['Ratio input'], file_dict['Leads and caps'], file_dict['Dial output'],
                      file_dict['Permutable']], file_dict['Ratio output'], afactor=factora, bfactor=factorb)
 print(ratio_cal.balance_dict)
@@ -48,7 +49,7 @@ print()
 print('Testing the scale buildup')
 # For now the starting point is an NMIA value of AH11C1
 # Read in the reference value of AH11C
-ref_file = file_dict['Working directory'] + '/' + file_dict['Reference']
+ref_file = os.path.join(cwd, file_dict['Working directory'], file_dict['Reference'])
 ref_dict = {}
 with open(ref_file, newline='') as csvfile:
     reader = csv.reader(csvfile)
@@ -64,7 +65,7 @@ c = ureal(cap, cap * ucap / 2, 50, label='ah11c1c')
 cert = g + 1j * w * c  # admittance of reference at angular frequency w
 print('reference value for buildup = ', repr(cert))
 # uses this reference value in CAPSCALE
-buildup = CAPSCALE(file_dict['Working directory'],
+buildup = CAPSCALE(os.path.join(cwd, file_dict['Working directory']),
                    [file_dict['Scale input'], file_dict['Leads and caps']], file_dict['Scale output'], cert,
                    afactor=factora, bfactor=factorb, ratio=final_ratio)
 all_capacitors = buildup.buildup()

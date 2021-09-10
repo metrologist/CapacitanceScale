@@ -42,11 +42,13 @@ Manual Input
 ------------
 All the csv files that will be used for input and output of complete capacitance scale calculation are included in a
 main_YYYY-MM-DD.csv file. Note that the output file names are generated automatically by the program and the manual
-entry needs to match (can automate this once we are sure the naming system is fit-for-purpose).
+entry needs to match (can automate this once we are sure the naming system is fit-for-purpose). By default these csv
+files are all located in the 'run_lists' folder. The working directory entry is relative to the current working
+directory for main.py.
 
 .. code-block:: csv
 
-   Working directory,G:\My Drive\KJ\PycharmProjects\CapacitanceScale\new_datastore
+   Working directory,new_datastore\nov2019
    Dial input,dialcal_in_2019-10-16_a.csv
    Dial output,dialcal_out_2019-10-16_a.csv
    Permutable,comp_permute_2019-11-15.csv
