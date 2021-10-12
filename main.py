@@ -17,7 +17,7 @@ from summary_check import SUMMARY
 import os
 
 cwd = os.getcwd()  # get the current working directory
-file_info = 'main_2021-09-22.csv'  # list of directories and files, also used to name the summary file
+file_info = 'main_2021-10-11_b.csv'  # list of directories and files, also used to name the summary file
 file_dict = {}  # hold these directories/files in this dictionary
 cwd_file_info = os.path.join(cwd, 'run_lists', file_info)
 with open(cwd_file_info, newline='') as csvfile:
