@@ -20,10 +20,10 @@ class EXAMPLE(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnQuit, fileItem)
 
         self.pnl = wx.Panel(self)
-        self.alpha_heading = wx.StaticText(self.pnl, pos=(30, 50))
+        self.alpha_heading = wx.StaticText(self.pnl, pos=(30, 70))
         self.alpha_heading.SetLabel('alpha dial')
 
-        self.beta_heading = wx.StaticText(self.pnl, pos=(250, 50))
+        self.beta_heading = wx.StaticText(self.pnl, pos=(250, 70))
         self.beta_heading.SetLabel('beta dial')
         self.enter_alpha = wx.TextCtrl(self.pnl, size=(200, 30), style=wx.TE_MULTILINE | wx.wxEVT_TOOL_ENTER, pos=(30, 100))
         self.enter_alpha.Bind(wx.EVT_TEXT_ENTER, self.on_enter_alpha)
@@ -53,21 +53,25 @@ class EXAMPLE(wx.Frame):
             digit.SetEditable(False)
             digit.SetBackgroundColour((204, 255, 204))
 
-        self.misc_input_heading = wx.StaticText(self.pnl, pos=(30,220))
-        self.misc_input_heading.SetLabel('Header comment')
+        self.misc_input_heading = wx.StaticText(self.pnl, pos=(500,70))
+        self.misc_input_heading.SetLabel('Description')
 
-        self.comment_box = wx.TextCtrl(self.pnl, size=(400, 100), style=wx.TE_MULTILINE, pos=(30, 250))
+        self.comment_box = wx.TextCtrl(self.pnl, size=(300, 30), pos=(500, 100), style=wx.TE_PROCESS_ENTER)
+        self.comment_box.Bind(wx.EVT_TEXT_ENTER, self.on_enter_comment)
 
-        self.hint = wx.StaticText(self.pnl, pos=(500, 70))
+        self.hint = wx.StaticText(self.pnl, pos=(30, 220))
         self.hint.SetLabel('select cell and then right click to set row number')
 
-        self.data_grid = wxgrid.Grid(self.pnl, size=(450,300), pos=(500,100))
-        rows = 12
-        cols = 4
+        self.data_grid = wxgrid.Grid(self.pnl, size=(844,300), pos=(30,250))
+        rows = 14
+        cols = 5
         self.data_grid.CreateGrid(rows, cols)
-        colLabels = ['alpha', 'beta', 'alpha', 'beta']
-        for col in range(4):
+        colLabels = ['alpha', 'beta', 'alpha', 'beta', 'description']
+        for col in range(len(colLabels)):
             self.data_grid.SetColLabelValue(col, colLabels[col])
+        self.data_grid.SetColSize(2,150)
+        self.data_grid.SetColSize(3,150)
+        self.data_grid.SetColSize(4,300)
 
         self.data_grid.Bind(wxgrid.EVT_GRID_CELL_RIGHT_CLICK, self.on_grid)
         for i in range(rows):
@@ -75,13 +79,13 @@ class EXAMPLE(wx.Frame):
                 self.data_grid.SetReadOnly(i, j)
 
         self.spinControl = wx.SpinCtrl(self.pnl, -1, '', (100, 10), style=wx.SP_WRAP | wx.SP_ARROW_KEYS )
-        self.spinControl.SetRange(1, 12)
+        self.spinControl.SetRange(1, rows)
         self.spinControl.SetValue(1)
         self.spin_heading = wx.StaticText(self.pnl, pos=(20, 10))
         self.spin_heading.SetLabel('row number')
 
 
-        self.SetSize((1000, 600))
+        self.SetSize((1000, 650))
         self.Centre()
 
     def on_enter_alpha(self, e):
@@ -100,6 +104,9 @@ class EXAMPLE(wx.Frame):
         :return:
         """
         self.spinControl.SetValue(self.data_grid.GetGridCursorRow() + 1)
+
+    def on_enter_comment(self, e):
+        pass
 
 def main():
     app = wx.App()

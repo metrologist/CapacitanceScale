@@ -1,0 +1,1234 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Capacitance Scale Project &#8212; Capacitance Scale 0.9 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">Capacitance Scale 0.9 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Capacitance Scale Project</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="capacitance-scale-project">
+<h1>Capacitance Scale Project<a class="headerlink" href="#capacitance-scale-project" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<p>This software supports technical procedure ‘E.005.003: Establishing the MSL Capacitance Scale’ which describes all the
+technical processes and measurement models. At this stage the software does not include environmental sensitivities
+(temperature and pressure) and manages only a single prescribed set of measurements to establish the capacitance scale
+from 0.5 pF to 1000 pF. Extending the classes to provide this extra functionality should not be too difficult.</p>
+<p>Assuming that the user is following the steps described in E.005 these instructions show how to enter the manually
+gathered data for processing. The figure below is an overview that shows where data is gathered (light blue boxes) for
+processing in the Python classes (light green) supported by additional information in the dark blue boxes. Traceable
+output values are captured in the orange boxes.</p>
+<img alt="_images/Data_flow.png" src="_images/Data_flow.png" />
+<section id="file-naming-convention">
+<h2>File Naming Convention<a class="headerlink" href="#file-naming-convention" title="Permalink to this headline">¶</a></h2>
+<p>All data is entered as .csv files and it is essential to adopt a naming convention so that there is no ambiguity about
+which data has been used to produce a calibration report. The generic names for data should be</p>
+<ul class="simple">
+<li><p>Main dial calibration: dialcal_in, dialcal_out.</p></li>
+<li><p>Ratio calibration: ratiocal_in, ratiocal_out.</p></li>
+<li><p>Capacitor set calibration: capcal_in, capcal_out.</p></li>
+</ul>
+<p>Each of these is labelled with a date YYYY-MM-DD_alpha so that, for example, we might have ‘ratiocal_in_2020-12-02_b.csv’
+as the set of dial readings for calibrating the 10:1 voltage ratio.
+Additionally, we have less frequently updated component files that are used for calculation.</p>
+<ul class="simple">
+<li><p>Permutable capacitor: comp_permute</p></li>
+<li><p>Set of capacitors and leads: comp_leads_caps</p></li>
+<li><p>Reference value for AH11C1: reference_val_YYYY-MM-DD</p></li>
+</ul>
+<p>Then there are the calculation runs that allow the selection of any combination of input data files to create a set of
+results for a capacitance scale buildup. The onus for selecting a sensible combination of input data files (i.e. making
+physical sense) rests with the operator.
+The processing of file collections is done with</p>
+<ul class="simple">
+<li><p>The input set: main</p></li>
+<li><p>Corresponding summary: summary_main</p></li>
+</ul>
+<p>For example we would list the selected inputs in ‘main_2021-08-13_e.csv’ and produce a summary in
+‘summary_main_2021-08-13_e.csv’</p>
+</section>
+<section id="manual-input">
+<h2>Manual Input<a class="headerlink" href="#manual-input" title="Permalink to this headline">¶</a></h2>
+<p>All the csv files that will be used for input and output of complete capacitance scale calculation are included in a
+main_YYYY-MM-DD.csv file. Note that the output file names are generated automatically by the program and the manual
+entry needs to match (can automate this once we are sure the naming system is fit-for-purpose). By default these csv
+files are all located in the ‘run_lists’ folder. The working directory entry is relative to the current working
+directory for main.py.</p>
+<div class="highlight-csv notranslate"><div class="highlight"><pre><span></span>Working directory,new_datastore\nov2019
+Dial input,dialcal_in_2019-10-16_a.csv
+Dial output,dialcal_out_2019-10-16_a.csv
+Permutable,comp_permute_2019-11-15.csv
+Ratio input,ratiocal_in_2019-11-15.csv
+Ratio output,ratiocal_out_2019-11-15.csv
+Scale input,capcal_in_2019-11-15.csv
+Scale output,capcal_out_2019-11-15.csv
+Leads and caps,comp_leads_caps_2019-10-16.csv
+Reference,reference_val_2021-08-24.csv
+</pre></div>
+</div>
+<p>All the input files are structured by example.</p>
+<p>For calibrating the dials, dialcal_in_2019-10-16_a.csv, which somewhat clumsily enters the alpha and beta values direct
+into json dictionary strings. Y3 is entered as the dc resistance r3 (measured with a DMM) and the parallel capacitance
+c3 indicated on the phase angle standard.</p>
+<div class="highlight-csv notranslate"><div class="highlight"><pre><span></span>Date,16 October 2019
+Reference,KJ Lab Diary2 p.107
+w,1e4
+alpha1,&quot;{&quot;&quot;x&quot;&quot;: 1.000098, &quot;&quot;u&quot;&quot;: 2e-06, &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;alpha1&quot;&quot;}&quot;
+beta1,&quot;{&quot;&quot;x&quot;&quot;: -0.000704, &quot;&quot;u&quot;&quot;: 2e-06, &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;beta1&quot;&quot;}&quot;
+alpha2,&quot;{&quot;&quot;x&quot;&quot;: -0.000130, &quot;&quot;u&quot;&quot;: 2e-06, &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;alpha2&quot;&quot;}&quot;
+beta2,&quot;{&quot;&quot;x&quot;&quot;: 0.999970, &quot;&quot;u&quot;&quot;: 2e-06, &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;beta1&quot;&quot;}&quot;
+r,0.01
+k,0.2000000
+c1,es14
+c2,gr1000b
+label y3,100k4
+r3,99.72419e3
+ur3,0.1
+c3,0.0140e-12
+uc3,0.001e-12
+</pre></div>
+</div>
+<p>The values of capacitors c1 and c2 are found in comp_leads_caps_2019-10-16.csv that is created by create_component.py
+by manually entering values into its code. The dc resistance, r, and ac parallel capacitance, c, of the resistor is used to
+calculate the value of Y3 as 1/r + j w c.</p>
+<div class="highlight-csv notranslate"><div class="highlight"><pre><span></span>Leads
+hv1,&quot;{&quot;&quot;relu&quot;&quot;: 0.05, &quot;&quot;w&quot;&quot;: 10000.0, &quot;&quot;label&quot;&quot;: &quot;&quot;ah11hv1&quot;&quot;, &quot;&quot;z&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.286, \&quot;&quot;ximag\&quot;&quot;: 0.00782, \&quot;&quot;u\&quot;&quot;: [0.0143, 0.00039100000000000007], \&quot;&quot;v\&quot;&quot;: [0.00020449000000000002, 0.0, 0.0, 1.5288100000000006e-07], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11hv1 z\&quot;&quot;}&quot;&quot;, &quot;&quot;y&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 2.8e-10, \&quot;&quot;ximag\&quot;&quot;: 2.552e-06, \&quot;&quot;u\&quot;&quot;: [1.4000000000000002e-11, 1.276e-07], \&quot;&quot;v\&quot;&quot;: [1.9600000000000004e-22, 0.0, 0.0, 1.628176e-14], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11hv1 y\&quot;&quot;}&quot;&quot;}&quot;
+hv2,&quot;{&quot;&quot;relu&quot;&quot;: 0.05, &quot;&quot;w&quot;&quot;: 10000.0, &quot;&quot;label&quot;&quot;: &quot;&quot;ah11hv2&quot;&quot;, &quot;&quot;z&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.16, \&quot;&quot;ximag\&quot;&quot;: 0.0083, \&quot;&quot;u\&quot;&quot;: [0.008, 0.000415], \&quot;&quot;v\&quot;&quot;: [6.4e-05, 0.0, 0.0, 1.72225e-07], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11hv2 z\&quot;&quot;}&quot;&quot;, &quot;&quot;y&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 3e-10, \&quot;&quot;ximag\&quot;&quot;: 2.606e-06, \&quot;&quot;u\&quot;&quot;: [1.5e-11, 1.3030000000000002e-07], \&quot;&quot;v\&quot;&quot;: [2.25e-22, 0.0, 0.0, 1.6978090000000007e-14], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11hv2 y\&quot;&quot;}&quot;&quot;}&quot;
+lv1,&quot;{&quot;&quot;relu&quot;&quot;: 0.05, &quot;&quot;w&quot;&quot;: 10000.0, &quot;&quot;label&quot;&quot;: &quot;&quot;ah11lv1&quot;&quot;, &quot;&quot;z&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.302, \&quot;&quot;ximag\&quot;&quot;: 0.00616, \&quot;&quot;u\&quot;&quot;: [0.0151, 0.000308], \&quot;&quot;v\&quot;&quot;: [0.00022801, 0.0, 0.0, 9.486400000000001e-08], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11lv1 z\&quot;&quot;}&quot;&quot;, &quot;&quot;y&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 2e-10, \&quot;&quot;ximag\&quot;&quot;: 9.36e-07, \&quot;&quot;u\&quot;&quot;: [1.0000000000000001e-11, 4.68e-08], \&quot;&quot;v\&quot;&quot;: [1.0000000000000002e-22, 0.0, 0.0, 2.1902400000000003e-15], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11lv1 y\&quot;&quot;}&quot;&quot;}&quot;
+lv2,&quot;{&quot;&quot;relu&quot;&quot;: 0.05, &quot;&quot;w&quot;&quot;: 10000.0, &quot;&quot;label&quot;&quot;: &quot;&quot;ah11lv2&quot;&quot;, &quot;&quot;z&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.273, \&quot;&quot;ximag\&quot;&quot;: 0.011009999999999999, \&quot;&quot;u\&quot;&quot;: [0.013650000000000002, 0.0005505], \&quot;&quot;v\&quot;&quot;: [0.00018632250000000006, 0.0, 0.0, 3.0305025e-07], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11lv2 z\&quot;&quot;}&quot;&quot;, &quot;&quot;y&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 3.6e-10, \&quot;&quot;ximag\&quot;&quot;: 1.6979999999999999e-06, \&quot;&quot;u\&quot;&quot;: [1.8000000000000002e-11, 8.49e-08], \&quot;&quot;v\&quot;&quot;: [3.240000000000001e-22, 0.0, 0.0, 7.20801e-15], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11lv2 y\&quot;&quot;}&quot;&quot;}&quot;
+xfrm,&quot;{&quot;&quot;relu&quot;&quot;: 0.05, &quot;&quot;w&quot;&quot;: 10000.0, &quot;&quot;label&quot;&quot;: &quot;&quot;100 to 1&quot;&quot;, &quot;&quot;z&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.037, \&quot;&quot;ximag\&quot;&quot;: 0.0081, \&quot;&quot;u\&quot;&quot;: [0.00185, 0.000405], \&quot;&quot;v\&quot;&quot;: [3.4225000000000003e-06, 0.0, 0.0, 1.64025e-07], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;100 to 1 z\&quot;&quot;}&quot;&quot;, &quot;&quot;y&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 3.4e-10, \&quot;&quot;ximag\&quot;&quot;: 5.24e-07, \&quot;&quot;u\&quot;&quot;: [1.7000000000000003e-11, 2.62e-08], \&quot;&quot;v\&quot;&quot;: [2.890000000000001e-22, 0.0, 0.0, 6.8644e-16], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;100 to 1 y\&quot;&quot;}&quot;&quot;}&quot;
+no_lead,&quot;{&quot;&quot;relu&quot;&quot;: 0.05, &quot;&quot;w&quot;&quot;: 10000.0, &quot;&quot;label&quot;&quot;: &quot;&quot;no_lead&quot;&quot;, &quot;&quot;z&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 0.0, \&quot;&quot;u\&quot;&quot;: [0.0, 0.0], \&quot;&quot;v\&quot;&quot;: [0.0, 0.0, 0.0, 0.0], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;no_lead z\&quot;&quot;}&quot;&quot;, &quot;&quot;y&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 0.0, \&quot;&quot;u\&quot;&quot;: [0.0, 0.0], \&quot;&quot;v\&quot;&quot;: [0.0, 0.0, 0.0, 0.0], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;no_lead y\&quot;&quot;}&quot;&quot;}&quot;
+Capacitors
+ah11a1,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;AH11A1&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 1e-11], &quot;&quot;yhv&quot;&quot;: [1.62e-09, 8.42e-11], &quot;&quot;ylv&quot;&quot;: [7.2e-10, 1.208e-10], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 1e-07, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11a1\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+ah11b1,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;AH11B1&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 1e-11], &quot;&quot;yhv&quot;&quot;: [2.48e-09, 8.36e-11], &quot;&quot;ylv&quot;&quot;: [7e-10, 1.175e-10], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 1e-07, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11b1\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+ah11c1,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;AH11C1&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 9.999999999999999e-11], &quot;&quot;yhv&quot;&quot;: [2.06e-09, 1.0409999999999998e-10], &quot;&quot;ylv&quot;&quot;: [5.7e-10, 8.77e-11], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 1e-06, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11c1\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+ah11d1,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;AH11D1&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 9.999999999999999e-11], &quot;&quot;yhv&quot;&quot;: [1.91e-09, 1.024e-10], &quot;&quot;ylv&quot;&quot;: [3.1e-10, 1.019e-10], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 1e-06, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11d1\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+ah11a2,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;AH11A2&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 1e-11], &quot;&quot;yhv&quot;&quot;: [1.62e-09, 8.42e-11], &quot;&quot;ylv&quot;&quot;: [4.3e-10, 1.191e-10], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 1e-07, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11a2\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+ah11b2,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;AH11B2&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 1e-11], &quot;&quot;yhv&quot;&quot;: [1.62e-09, 7.78e-11], &quot;&quot;ylv&quot;&quot;: [4e-10, 1.129e-10], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 1e-07, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11b2\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+ah11c2,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;AH11C2&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 9.999999999999999e-11], &quot;&quot;yhv&quot;&quot;: [1.96e-09, 1.012e-10], &quot;&quot;ylv&quot;&quot;: [5.6e-10, 1.0479999999999999e-10], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 1e-06, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11c2\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+ah11d2,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;AH11D2&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 9.999999999999999e-11], &quot;&quot;yhv&quot;&quot;: [1.91e-09, 1.024e-10], &quot;&quot;ylv&quot;&quot;: [3.1e-10, 1.019e-10], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 1e-06, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;ah11d2\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+es14,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;ES14&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 5e-13], &quot;&quot;yhv&quot;&quot;: [0.0, 0.0], &quot;&quot;ylv&quot;&quot;: [0.0, 0.0], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 5e-09, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;es14\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+es13,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;ES13&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 5e-12], &quot;&quot;yhv&quot;&quot;: [8e-10, 2.05e-10], &quot;&quot;ylv&quot;&quot;: [0.0, 0.0], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 5e-08, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;es13\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+es16,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;ES16&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 5e-12], &quot;&quot;yhv&quot;&quot;: [6e-10, 1.85e-10], &quot;&quot;ylv&quot;&quot;: [0.0, 0.0], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 5e-08, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;es16\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+gr10,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;GR10&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 1e-11], &quot;&quot;yhv&quot;&quot;: [0.0, 0.0], &quot;&quot;ylv&quot;&quot;: [0.0, 0.0], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 1e-07, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;gr10\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+gr100,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;GR100&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 9.999999999999999e-11], &quot;&quot;yhv&quot;&quot;: [7e-10, 4.8372e-10], &quot;&quot;ylv&quot;&quot;: [0.0, 0.0], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 1e-06, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;gr100\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+gr1000a,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;GR1000A&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 1e-09], &quot;&quot;yhv&quot;&quot;: [0.0, 1.386e-09], &quot;&quot;ylv&quot;&quot;: [0.0, 0.0], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 1e-05, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;gr1000a\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+gr1000b,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;GR1000B&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 1e-09], &quot;&quot;yhv&quot;&quot;: [0.0, 1.386e-09], &quot;&quot;ylv&quot;&quot;: [0.0, 0.0], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 1e-05, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;gr1000b\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+es13_16,&quot;{&quot;&quot;relu&quot;&quot;: 0.01, &quot;&quot;name&quot;&quot;: &quot;&quot;ES13ES16&quot;&quot;, &quot;&quot;nom_cap&quot;&quot;: [0.0, 1e-11], &quot;&quot;yhv&quot;&quot;: [2.08e-09, 4.948e-10], &quot;&quot;ylv&quot;&quot;: [0.0, 0.0], &quot;&quot;ang_freq&quot;&quot;: 10000.0, &quot;&quot;best_value&quot;&quot;: &quot;&quot;{\&quot;&quot;xreal\&quot;&quot;: 0.0, \&quot;&quot;ximag\&quot;&quot;: 1e-07, \&quot;&quot;u\&quot;&quot;: [1e-20, 1e-20], \&quot;&quot;v\&quot;&quot;: [1e-40, 0.0, 0.0, 1e-40], \&quot;&quot;df\&quot;&quot;: Infinity, \&quot;&quot;label\&quot;&quot;: \&quot;&quot;es13_16\&quot;&quot;}&quot;&quot;, &quot;&quot;flag&quot;&quot;: &quot;&quot;best value set&quot;&quot;}&quot;
+</pre></div>
+</div>
+<p>Next the model of the permutable capacitor is manually entered in the code of create_component.py, not directly into
+comp_permute_2019-11-15.csv.</p>
+<div class="highlight-csv notranslate"><div class="highlight"><pre><span></span>Components of permutable capacitor circuit
+za,&quot;{&quot;&quot;xreal&quot;&quot;: 0.065128, &quot;&quot;ximag&quot;&quot;: 0.004269, &quot;&quot;u&quot;&quot;: [0.0032564000000000004, 0.00021344999999999998], &quot;&quot;v&quot;&quot;: [1.0604140960000004e-05, 0.0, 0.0, 4.556090249999999e-08], &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;za&quot;&quot;}&quot;
+ya,&quot;{&quot;&quot;xreal&quot;&quot;: 5e-11, &quot;&quot;ximag&quot;&quot;: 6.491500000000001e-07, &quot;&quot;u&quot;&quot;: [2.5000000000000003e-12, 3.2457500000000005e-08], &quot;&quot;v&quot;&quot;: [6.250000000000001e-24, 0.0, 0.0, 1.0534893062500002e-15], &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;ya&quot;&quot;}&quot;
+zinta,&quot;{&quot;&quot;xreal&quot;&quot;: 0.02606, &quot;&quot;ximag&quot;&quot;: 0.002417, &quot;&quot;u&quot;&quot;: [0.0013030000000000001, 0.00012085], &quot;&quot;v&quot;&quot;: [1.6978090000000003e-06, 0.0, 0.0, 1.46047225e-08], &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;zinta&quot;&quot;}&quot;
+y3,&quot;{&quot;&quot;xreal&quot;&quot;: 2.09e-10, &quot;&quot;ximag&quot;&quot;: 6.0527e-08, &quot;&quot;u&quot;&quot;: [1.045e-11, 3.02635e-09], &quot;&quot;v&quot;&quot;: [1.092025e-22, 0.0, 0.0, 9.1587943225e-18], &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;y3&quot;&quot;}&quot;
+y4Y2,&quot;{&quot;&quot;xreal&quot;&quot;: 6.4e-09, &quot;&quot;ximag&quot;&quot;: 3.1817999999999998e-06, &quot;&quot;u&quot;&quot;: [3.2000000000000003e-10, 1.5908999999999998e-07], &quot;&quot;v&quot;&quot;: [1.0240000000000002e-19, 0.0, 0.0, 2.5309628099999993e-14], &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;y4Y2&quot;&quot;}&quot;
+zb,&quot;{&quot;&quot;xreal&quot;&quot;: 0.065498, &quot;&quot;ximag&quot;&quot;: 0.0043300000000000005, &quot;&quot;u&quot;&quot;: [0.0032749000000000003, 0.0002165], &quot;&quot;v&quot;&quot;: [1.0724970010000003e-05, 0.0, 0.0, 4.6872250000000005e-08], &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;zb&quot;&quot;}&quot;
+yb,&quot;{&quot;&quot;xreal&quot;&quot;: 5e-11, &quot;&quot;ximag&quot;&quot;: 6.438e-07, &quot;&quot;u&quot;&quot;: [2.5000000000000003e-12, 3.219e-08], &quot;&quot;v&quot;&quot;: [6.250000000000001e-24, 0.0, 0.0, 1.0361960999999999e-15], &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;yb&quot;&quot;}&quot;
+zintb,&quot;{&quot;&quot;xreal&quot;&quot;: 0.4169999999999998, &quot;&quot;ximag&quot;&quot;: 0.002515, &quot;&quot;u&quot;&quot;: [0.020849999999999994, 0.00012575], &quot;&quot;v&quot;&quot;: [0.00043472249999999975, 0.0, 0.0, 1.58130625e-08], &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;zintb&quot;&quot;}&quot;
+y1,&quot;{&quot;&quot;xreal&quot;&quot;: 2.09e-10, &quot;&quot;ximag&quot;&quot;: 6.0527e-08, &quot;&quot;u&quot;&quot;: [1.045e-11, 3.02635e-09], &quot;&quot;v&quot;&quot;: [1.092025e-22, 0.0, 0.0, 9.1587943225e-18], &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;y1&quot;&quot;}&quot;
+y2Y1,&quot;{&quot;&quot;xreal&quot;&quot;: 7.41e-10, &quot;&quot;ximag&quot;&quot;: 4.0168e-07, &quot;&quot;u&quot;&quot;: [3.7050000000000004e-11, 2.0084e-08], &quot;&quot;v&quot;&quot;: [1.3727025000000002e-21, 0.0, 0.0, 4.03367056e-16], &quot;&quot;df&quot;&quot;: Infinity, &quot;&quot;label&quot;&quot;: &quot;&quot;y2Y1&quot;&quot;}&quot;
+pc1,10.000144
+pc2,10.000304
+pc3,10.000218
+pc4,10.000151
+pc5,10.000200
+pc6,10.000138
+pc7,9.9998906
+pc8,10.000130
+pc9,10.000025
+pc10,10.000043
+pc11,10.000277
+</pre></div>
+</div>
+<p>Then we enter the balance readings for the permutable capacitor into ratiocal_in_2019-11-15.csv.</p>
+<div class="highlight-csv notranslate"><div class="highlight"><pre><span></span>Date,15 November 2019
+Reference,KJ Lab Diary2 p.117
+w,1e4
+s1,-0.166400,0.168700
+s2,0.091340,0.170270
+s3,0.113550,0.168890
+s4,-0.000250,0.170230
+s5,0.249770,0.167580
+s6,-0.009570,0.173700
+s7,-0.089670,0.172390
+s8,-0.024010,0.171770
+s9,-0.138560,0.171400
+s10,-0.201940,0.170870
+s11,-0.015090,0.168600
+s12,-0.166400,0.167260
+</pre></div>
+</div>
+<p>All the dial settings for measuring the ratios in the buildup are entered in capcal_in_2019-11-15.csv.</p>
+<div class="highlight-csv notranslate"><div class="highlight"><pre><span></span>Date,15 November 2019
+Reference,KJ Lab Diary2 p.119
+w,1e4
+r1,1.09530,-0.171600
+r2,0.815200,0.173700
+r3,0.071380,-0.121580
+r4,0.008940,-0.157950
+r5,0.011560,-0.166460
+r6,0.008170,-0.149500
+r7,0.005580,-0.150660
+r8,0.223730,-0.170130
+r9,0.009030,-0.158210
+r10,0.010250,-0.152040
+r11,0.013570,-0.172170
+r12,0.007840,-0.170230
+r13,-0.410960,-0.164390
+r14,-0.313750,-0.112200
+r15,-0.163860,-0.106820
+</pre></div>
+</div>
+<p>Finally before calculation we enter the current value of the reference 100 pF in reference_val_2021-08-24.csv.
+As of October 2021 this reference capacitance is just a convenience to allow for post-processing to impose a
+time-dependent constraint on the mean of the relative values of the four AH11 capacitors in frame 1. The expanded
+uncertainty should be based on the uncertainty in the constraint rather than the historical certificate uncertainty.</p>
+<div class="highlight-csv notranslate"><div class="highlight"><pre><span></span>w,1e4,rad/s
+cap,99.999586e-12,pF
+ucap,0.11e-6,relative expanded uncertainty k = 2
+dfact,1.9e-6,dissipation factor S/F/Hz
+udfact,0.6e-6,S/F/Hz k=2
+</pre></div>
+</div>
+<p>It is important to match the existing file examples precisely with no additional spaces or line breaks.</p>
+</section>
+<section id="output-summary">
+<h2>Output Summary<a class="headerlink" href="#output-summary" title="Permalink to this headline">¶</a></h2>
+<p>The various output csv files can be viewed directly but as they can contain some very long json strings of ucomplex
+dictionaries it is difficult to see the important results. A summary file of the form summary_main_2021-08-21_a is
+produced for each set of buildup results. This file includes all the values of component models, the dial readings and
+the values of the capacitors in pF. Checking of the input data is then relatively easy and the simplified results are
+easily pasted into spreadsheets or other report processing tools.</p>
+</section>
+<section id="iteration">
+<h2>Iteration<a class="headerlink" href="#iteration" title="Permalink to this headline">¶</a></h2>
+<p>Finally the summary also produces an updated version of comp_leads_caps_2019-10-16.csv with updated best values of all
+the capacitors. Remembering that some of the capacitors were used for calibrating the main dials and the 10:1 voltage
+ratio, it might be prudent to rerun the whole process starting with the new best values. This should only be considered
+if the origninal file was using the nominal value of the capacitors as produced by CREATOR.</p>
+</section>
+</section>
+<section id="module-main">
+<span id="main"></span><h1>Main<a class="headerlink" href="#module-main" title="Permalink to this headline">¶</a></h1>
+<p>Takes all input data from the calibration of the dials, the 10:1 ratio
+and all the individual capacitance ratio measurements so that the results can be
+presented together with the input data in a format suitable for checking.</p>
+<p>A single buildup dataset is identified in the main.csv file that contains the names of all
+the input/output directories/files that are used in the specific calculation.</p>
+<section id="module-cal_balance">
+<span id="cal-balance"></span><h2>Cal Balance<a class="headerlink" href="#module-cal_balance" title="Permalink to this headline">¶</a></h2>
+<p>Calibrates the dials used for the alpha and beta values of all ratio measurements.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="cal_balance.DIALCAL">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">cal_balance.</span></span><span class="sig-name descname"><span class="pre">DIALCAL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_file_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cal_balance.DIALCAL" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="cal_balance.DIALCAL.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_file_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cal_balance.DIALCAL.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calibration of the main balance amplifier requires two sets of input data. The first set primarily balances the
+alpha dial at full scale. The second set primarily balances the beta dial at full scale. Calibration is at the
+single frequency of 10000 radians per second. See Appendix A1 of E.005.03.
+Each data set comprises</p>
+<p>k: the setting of the 7 dial IVD
+r: the ratio of the injection transformer used
+Y1: the capacitor connected to the 7 dial IVD
+Y2 or Y3: the capacitor or resistor connected to the balance dials (alpha at 1, beta at 1 respectively)
+alpha and beta dial settings for balance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_path</strong> – directory for data in/out</p></li>
+<li><p><strong>input_file_names</strong> – list of csv files [dial settings and component names, components]</p></li>
+<li><p><strong>output_file_name</strong> – output can be stored in this csv file (same directory)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cal_balance.DIALCAL.dialfactors">
+<span class="sig-name descname"><span class="pre">dialfactors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cal_balance.DIALCAL.dialfactors" title="Permalink to this definition">¶</a></dt>
+<dd><p>This contains the critical calculation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – booleans file_output and append give a choice on whether to produce a file, either append or new</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>returns the two uncertain complex values of the two dial factors</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-cal_main_ratio">
+<span id="cal-main-ratio"></span><h2>Cal Main Ratio<a class="headerlink" href="#module-cal_main_ratio" title="Permalink to this headline">¶</a></h2>
+<p>Calibrates the 10:1 voltage ratio of the HV to LV side of the capacitance bridges.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="cal_main_ratio.PERMUTE">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">cal_main_ratio.</span></span><span class="sig-name descname"><span class="pre">PERMUTE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_file_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file_name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cal_main_ratio.PERMUTE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="cal_main_ratio.PERMUTE.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_file_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file_name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cal_main_ratio.PERMUTE.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the balance values of a Permutable Capacitor run and returns an uncertain complex value for the main
+10:1 ratio.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_path</strong> – working directlory</p></li>
+<li><p><strong>input_file_names</strong> – list of csv files, order sensitive, [balances s1 … s12, leads and caps, cal factors for the main dial (factora, factorb), model compenents as ucomplex impedance/admittance and values in pF of each of the 11 capacitors]</p></li>
+<li><p><strong>output_file_name</strong> – </p></li>
+<li><p><strong>kwargs</strong> – ‘afactor’ and ‘bfactor to overide any csv file input values for factora and factorb (redundant?)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cal_main_ratio.PERMUTE.calc_raw_ratio">
+<span class="sig-name descname"><span class="pre">calc_raw_ratio</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cal_main_ratio.PERMUTE.calc_raw_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements equations 37 and 46 of E.005.03</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>10:1 voltage ratio as calculated before correcting for lead and internal impedance effects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cal_main_ratio.PERMUTE.correct_ratio">
+<span class="sig-name descname"><span class="pre">correct_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uncorrected_ratio</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cal_main_ratio.PERMUTE.correct_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements equation 45 of E.005.003, applying the correction for the external leads and internal components
+of the permutable capacitor model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>uncorrected_ratio</strong> – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cal_main_ratio.PERMUTE.file_ratio">
+<span class="sig-name descname"><span class="pre">file_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corrected_ratio</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cal_main_ratio.PERMUTE.file_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores a ucomplex value of the 10:1 ratio in the csv output file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>corrected_ratio</strong> – ucomplex value of the 10:1 ratio</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ratio is stored in the output files together with meta data</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-meas_cap_ratio">
+<span id="meas-cap-ratio"></span><h2>Meas Cap Ratio<a class="headerlink" href="#module-meas_cap_ratio" title="Permalink to this headline">¶</a></h2>
+<p>Measures the ratios of all the capacitors following the steps given in technical procedure E.005.003 to establish
+values of capacitors from 0.5 pF to 1000 pF.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="meas_cap_ratio.CAPSCALE">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">meas_cap_ratio.</span></span><span class="sig-name descname"><span class="pre">CAPSCALE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_value</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#meas_cap_ratio.CAPSCALE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="meas_cap_ratio.CAPSCALE.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_value</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#meas_cap_ratio.CAPSCALE.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes in all the measurement information from the input files and has methods to calculate the values of all the
+capacitors in the buildup based on the assumed value of the reference capacitor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_path</strong> – the sub-folder that holds all the csv files</p></li>
+<li><p><strong>input_files</strong> – a list of file names for dial factors, 10:1 ratio, leads, capacitors and balance readings</p></li>
+<li><p><strong>output_file_name</strong> – csv file for calculated values of all the capacitors</p></li>
+</ul>
+</dd>
+</dl>
+<p>:param ref_value is the up to date value of AH11C1 (derived from external calibration history)
+:param kwargs: allows values of ‘afactor’, ‘bfactor’ and ‘ratio’ to be entered directly rather than extracted from the input files. This is used when the whole buildup calculation is done in a single run in main.py</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="meas_cap_ratio.CAPSCALE.buildup">
+<span class="sig-name descname"><span class="pre">buildup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#meas_cap_ratio.CAPSCALE.buildup" title="Permalink to this definition">¶</a></dt>
+<dd><p>This calculation strictly follows the buildup described in MSLT.E.005.03 where each of the ratio measurements
+r1…r13 is defined. Any change such as the choice of leads or choice of reference capacitor, will need a new
+method. It would be best to add methods named, e.g., buildup_2002() rather than to edit this method. Ultimately
+it should be possible to use <a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs to manage alternative buildups.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a dictionary of CAPACITOR objects with new ‘best values’ set.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="meas_cap_ratio.CAPSCALE.cap_ratio">
+<span class="sig-name descname"><span class="pre">cap_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">balance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inverse</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#meas_cap_ratio.CAPSCALE.cap_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equation 46,47 of E.005.003</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>balance</strong> – the tuple of balance dial values</p></li>
+<li><p><strong>cap</strong> – the ‘known’ capacitor in the ratio</p></li>
+<li><p><strong>inverse</strong> – boolean when true to divide capacitor by the ratio</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the ‘known’ capacitor value either multiplied or divided by the measured ratio</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="meas_cap_ratio.CAPSCALE.store_buildup">
+<span class="sig-name descname"><span class="pre">store_buildup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#meas_cap_ratio.CAPSCALE.store_buildup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores the capacitor name, capacitor best value in pF and CAPACITOR object in the output csv file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>saves the output file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="meas_cap_ratio.CAPSCALE.sum_ratio">
+<span class="sig-name descname"><span class="pre">sum_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bal1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bal2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sum_val</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#meas_cap_ratio.CAPSCALE.sum_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the value of the two 5 pF capacitors (ES 13 and ES16) from knowing the value of the two in parallel
+and their difference in ratio when individually balanced against the 0.5 pF (ES14). Equations 19 to 21 of
+E.005.003. Preferred method is sum_ratio2 that includes the effect of connecting to the injection transformer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bal1</strong> – ratio ES14/ES13</p></li>
+<li><p><strong>bal2</strong> – ratio ES14/ES16</p></li>
+<li><p><strong>sum_val</strong> – the value of the two capacitors in parallel</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>value of ES13, ES16 and ES14</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="meas_cap_ratio.CAPSCALE.sum_ratio2">
+<span class="sig-name descname"><span class="pre">sum_ratio2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bal1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bal2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sum_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cap1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cap2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">com_lead</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#meas_cap_ratio.CAPSCALE.sum_ratio2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the value of the two 5 pF capacitors (ES13 and ES16) from knowing the value of the two in parallel
+and their difference in ratio when individually balanced against the 0.5 pF (ES14). The 5 pF capacitors connect
+directly to the HV side when measured against a 100 pF capacitor, but are on the LV side with the injection
+transformer (xfrm LEAD) when being compared to the 0.5 pF capacitor. E005.003 does not have these formulae.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bal1</strong> – ratio ES14/ES13</p></li>
+<li><p><strong>bal2</strong> – ratio ES14/ES16</p></li>
+<li><p><strong>sum_val</strong> – the value of the two capacitors in parallel</p></li>
+<li><p><strong>cap1</strong> – one of the 5 pF CAPACITOR object ES13</p></li>
+<li><p><strong>cap2</strong> – the other of the 5 pF CAPACITOR objects ES16</p></li>
+<li><p><strong>com_lead</strong> – the additional common lead when the two 5 pF caps are paralleled on the low voltage side</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>value of ES13, ES16 and ES14</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-summary_check">
+<span id="summary"></span><h2>Summary<a class="headerlink" href="#module-summary_check" title="Permalink to this headline">¶</a></h2>
+<p>Summarises all the input and output data into a ‘human readable’ format in a single csv file. This summary file is also
+appropriate for viewing with a spreadsheet program which can be used to support the checking process and plotting
+of historical values. It can also provide an updated file LEAD and CAPACITOR objects for input to the next capacitance
+calibration run.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="summary_check.SUMMARY">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">summary_check.</span></span><span class="sig-name descname"><span class="pre">SUMMARY</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#summary_check.SUMMARY" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="summary_check.SUMMARY.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#summary_check.SUMMARY.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>SUMMARY creates a single csv file that contains all the input data and calculated results in a human readable
+format. This is a convenience for checking purposes noting that the full results are stored in csv files as
+json strings holding uncertain numbers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>file_list</strong> – the list of input and output csv files identical to that used for the main calculation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="summary_check.SUMMARY.create_summary">
+<span class="sig-name descname"><span class="pre">create_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">update</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#summary_check.SUMMARY.create_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Step by step acquiring of data and results to put in the output csv file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>update</strong> – boolean set to True if an updated leads and caps file is also wanted</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a summary csv placed in the working directory and named ‘summary’ + the ‘Scale output’ name and, if update is set to True, an updated file ‘Leads and caps’ name + ‘updated’ .csv.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-constraint">
+<span id="constraint"></span><h2>Constraint<a class="headerlink" href="#module-constraint" title="Permalink to this headline">¶</a></h2>
+<p>constraint.py sets an expected time dependence of the set of four AH11 capacitors that were calibrated in 2009 at the
+BIPM and in 2019 at NMI Australia. It is asserted that the chosen drift model is correct and all results are built on
+this assertion. The assertion can be expected to be modified over time as more external calibration data becomes
+available. Ultimately a local realisation of the farad will remove the need to assert a constraint.</p>
+<p>Certificate values have been summarised in
+G:Shared drivesMSL - ElectricityOngoingFaradTraceability   raceability_2021.xlsx</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="constraint.CONSTRAINT">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">constraint.</span></span><span class="sig-name descname"><span class="pre">CONSTRAINT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cap</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#constraint.CONSTRAINT" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="constraint.CONSTRAINT.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cap</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#constraint.CONSTRAINT.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses two calibration points to provide a straight line prediction of the mean of the relative values (ppm
+relative error) of all four AH11x1 capacitors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>date</strong> – a list of two decimal year dates, first for the BIPM and second for the NMIA calibrations</p></li>
+<li><p><strong>cap</strong> – a list of two ureals, first the average relative error from BIPM and the second from NMIA</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="constraint.CONSTRAINT.line">
+<span class="sig-name descname"><span class="pre">line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#constraint.CONSTRAINT.line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the straight line value for the date
+:param x: date as a decimal year, e.g. 2021.344
+:return: the ppm relative error of the average of all four AH11x1 capacitors as an uncertain real.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="constraint.CONSTRAINT.predicted">
+<span class="sig-name descname"><span class="pre">predicted</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#constraint.CONSTRAINT.predicted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predicts the restraint value at a date given by a string, e.g. ‘27-Sep-2021’</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>date</strong> – string that can be interpreted as a datetime object</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>predicted ureal value of restraint on the date</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="constraint.CONSTRAINT.year_fraction">
+<span class="sig-name descname"><span class="pre">year_fraction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#constraint.CONSTRAINT.year_fraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>utility to convert a datetime.datetime object into a decimal year</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>date</strong> – datetime object</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>decimal year</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-components">
+<span id="components"></span><h2>Components<a class="headerlink" href="#module-components" title="Permalink to this headline">¶</a></h2>
+<p>Two terminal-pair equivalent circuits for coaxial leads and capacitors are structured as Python objects. For leads
+this is a simple series impedance and parallel admittance of the coaxial cable. For capacitors it includes the
+admittances to screen.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="components.LEAD">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">components.</span></span><span class="sig-name descname"><span class="pre">LEAD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">series_z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ang_freq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_u</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#components.LEAD" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="components.LEAD.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">series_z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ang_freq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_u</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#components.LEAD.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pi transform of a cable</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – label to identify cable</p></li>
+<li><p><strong>series_z</strong> – series impedance as tuple of resistance (ohm) and inductance (H)</p></li>
+<li><p><strong>parallel_y</strong> – admittance of cable as tuple of conductance (S) and capacitance (F)</p></li>
+<li><p><strong>ang_freq</strong> – angular frequency in radians per second</p></li>
+<li><p><strong>rel_u</strong> – a default relative uncertainty in the L, R, C values (could be nuanced)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="components.CONNECT">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">components.</span></span><span class="sig-name descname"><span class="pre">CONNECT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lead1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lead2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#components.CONNECT" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="components.CONNECT.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lead1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lead2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#components.CONNECT.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connects two LEAD objects in series with the assumption that they are two similar coaxial leads differing only
+in length. This allows the transformer lead to simply be added to the hv lead on the low voltage side of
+the 10:1 ratio.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lead1</strong> – LEAD object</p></li>
+<li><p><strong>lead2</strong> – LEAD object</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="components.CAPACITOR">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">components.</span></span><span class="sig-name descname"><span class="pre">CAPACITOR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nom_cap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yhv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ang_freq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_u</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#components.CAPACITOR" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="components.CAPACITOR.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nom_cap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yhv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ang_freq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_u</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#components.CAPACITOR.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Two terminal-pair capacitor. Components entered as C and G but stored as admittances for the given angular</dt><dd><p>frequency. The lead corrections is calculated using the nominal value of the capacitor.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – label to identify capacitor</p></li>
+<li><p><strong>nom_cap</strong> – the main capacitor as a tuple of conductance and capacitance, nominal value</p></li>
+<li><p><strong>yhv</strong> – additional admittance to screen at the HV terminal as a tuple of G and C</p></li>
+<li><p><strong>ylv</strong> – additional admittance to screen at the LV terminal as a tuple of G and C</p></li>
+<li><p><strong>ang_freq</strong> – angular frequency, w, in radians per second</p></li>
+<li><p><strong>rel_u</strong> – a default 1% relative uncertainty in measured C, G values for yhv and ylv (should nuance?).</p></li>
+<li><p><strong>kwargs</strong> – best_value = the best calculated value as a ucomplex in the build up</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="components.CAPACITOR.lead_correction">
+<span class="sig-name descname"><span class="pre">lead_correction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvlead</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lvlead</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#components.CAPACITOR.lead_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>connects the hv and lv leads to capacitor and calculates the modified value of the capacitor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hvlead</strong> – a LEAD object connected at the high potential terminal 1-2</p></li>
+<li><p><strong>lvlead</strong> – a LEAD object connected at the low potential terminal 3-4</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ucomplex correction so that true Y = measured Y + correction</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="components.CAPACITOR.set_best_value">
+<span class="sig-name descname"><span class="pre">set_best_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#components.CAPACITOR.set_best_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replaces the instantiated self.best_value with a ucomplex value. This might be a convenience if an updated
+version of a specific instance of CAPACITOR needs to be stored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>value</strong> – ucomplex admittance value</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the best value is reset</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="components.PARALLEL">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">components.</span></span><span class="sig-name descname"><span class="pre">PARALLEL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cap1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cap2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#components.PARALLEL" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="components.PARALLEL.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cap1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cap2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#components.PARALLEL.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifically for putting the two 5 pF capacitors in parallel with the original hv leads in parallel. It is
+assumed that there is no additional common lead, i.e. they plug directly into the LV transformer and common
+detector junction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cap1</strong> – CAPACITOR object</p></li>
+<li><p><strong>cap2</strong> – CAPACITOR object</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="components.PARALLEL.lead_correction">
+<span class="sig-name descname"><span class="pre">lead_correction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvlead</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lvlead</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#components.PARALLEL.lead_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connects the hv and lv leads to capacitor and calculates the modified value of the capacitor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hvlead</strong> – LEAD object for the common hv lead</p></li>
+<li><p><strong>lvlead</strong> – LEAD object for the common lv lead</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ucomplex correction so that true Y = measured Y + correction</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="components.PARALLEL.set_best_value">
+<span class="sig-name descname"><span class="pre">set_best_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#components.PARALLEL.set_best_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replaces the instantiated self.best_value with a ucomplex value. This might be a convenience if an updated
+version of a specific instance of CAPACITOR needs to be stored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>value</strong> – ucomplex value of admittance</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>value is set in the PARALLEL object</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-create_component">
+<span id="create-component"></span><h2>Create Component<a class="headerlink" href="#module-create_component" title="Permalink to this headline">¶</a></h2>
+<p>Component creation is not required for routine capacitance scale measurements but is part of the maintenance process
+when leads are changed or new capacitors brought into the scale.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="create_component.CREATOR">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">create_component.</span></span><span class="sig-name descname"><span class="pre">CREATOR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">working_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_files</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#create_component.CREATOR" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="create_component.CREATOR.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">working_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_files</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#create_component.CREATOR.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Component models are managed with the classes in components.py with the measured values held in various csv
+files. While it can be convenient to enter new values by directly editing json string representations of
+ucomplex etc., it is safer to create these files by entering values directly from measurements recorded in lab
+books. The aim is to ensure that there is always clarity about the source of values for leads and various
+parasitic immitances. The risk is that hasty editing of files might later lead to difficulties with
+interpreting historic calculations where old values were simply overwritten with no lasting records kept.</p>
+<p>Values need to be entered into this code, but the ultimate intent is to use a GUI for manual data entry and
+display. All data entered into the GUI would be stored in csv files for processing. In this way the GUI remains
+a convenience without altering the essential flow of data in from csv files followed by calculation with
+results placed in csv files.</p>
+<p>Some information could be in an input file, but in general only the output file is required.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>working_directory</strong> – assume a common working directory</p></li>
+<li><p><strong>input_files</strong> – not yet used as values are in the code and easy to edit</p></li>
+<li><p><strong>output_files</strong> – name chosen to match the purpose</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="create_component.CREATOR.create_capacitors">
+<span class="sig-name descname"><span class="pre">create_capacitors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#create_component.CREATOR.create_capacitors" title="Permalink to this definition">¶</a></dt>
+<dd><p>All the measured values are in the lists created in this method</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>header</strong> – the string to title the block of capacitors in the output csv</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>appends to the file created by create_leads</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="create_component.CREATOR.create_leads">
+<span class="sig-name descname"><span class="pre">create_leads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#create_component.CREATOR.create_leads" title="Permalink to this definition">¶</a></dt>
+<dd><p>All the measured values are in the lists in this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>header</strong> – single line meta_data</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>creates a csv file of the lead models</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="create_component.CREATOR.create_output">
+<span class="sig-name descname"><span class="pre">create_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_dict_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#create_component.CREATOR.create_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic csv writer</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>header</strong> – string to include key meta-data</p></li>
+<li><p><strong>input_dict_list</strong> – each dictionary value is written as a row of the key and the value of the key</p></li>
+<li><p><strong>new</strong> – boolean set True for to write a new file or overwrite the file, when False it appends data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the output csv file for the CREATOR object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="create_component.CREATOR.create_permutable">
+<span class="sig-name descname"><span class="pre">create_permutable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">permutable_header</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#create_component.CREATOR.create_permutable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Latest values are entered by editing the values in the code for this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>permutable_header</strong> – string that identifies the source of the information</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>creates a csv file of the model of the permutable capacitor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-archive">
+<span id="archive"></span><h2>Archive<a class="headerlink" href="#module-archive" title="Permalink to this headline">¶</a></h2>
+<p>Developed prior to latest GTC development for storing uncertain numbers. These utility classes make it easy to store
+uncertain numbers and LEAD and CAPACITOR objects as JSON strings in a csv file.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="archive.GTCSTORE">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">archive.</span></span><span class="sig-name descname"><span class="pre">GTCSTORE</span></span><a class="headerlink" href="#archive.GTCSTORE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="archive.GTCSTORE.dict_to_ucomplex">
+<span class="sig-name descname"><span class="pre">dict_to_ucomplex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unc_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.GTCSTORE.dict_to_ucomplex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a dictionary created by ucomplex_to_dict and creates a GTC uncertain complex.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>unc_dict</strong> – dictionary of parts of a GTC uncertain complex.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>GTC uncertain complex</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.GTCSTORE.dict_to_ureal">
+<span class="sig-name descname"><span class="pre">dict_to_ureal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unr_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.GTCSTORE.dict_to_ureal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a dictionary created by ureal_to_dict and creates a GTC uncertain real.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>unr_dict</strong> – dictionary of parts of a GTC uncertain real.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>GTC uncertain real</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.GTCSTORE.json_to_ucomplex">
+<span class="sig-name descname"><span class="pre">json_to_ucomplex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unc_json</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.GTCSTORE.json_to_ucomplex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a json string created by ucomplex_to_json and creates a GTC uncertain complex.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>unc_json</strong> – json string of a dictionary of parts of a GTC uncertain complex.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>GTC uncertain complex</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.GTCSTORE.json_to_ureal">
+<span class="sig-name descname"><span class="pre">json_to_ureal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unr_json</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.GTCSTORE.json_to_ureal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a json string as created by ureal_to_json and creates a GTC uncertain real.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>unr_json</strong> – a json string of a dictionary of parts of a GTC uncertain real.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>GTC uncertain real</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.GTCSTORE.read_gtc">
+<span class="sig-name descname"><span class="pre">read_gtc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gtc_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.GTCSTORE.read_gtc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads json strings in a csv file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>gtc_file</strong> – full name of a csv file</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a list of json strings</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.GTCSTORE.read_gtc_real">
+<span class="sig-name descname"><span class="pre">read_gtc_real</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gtc_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.GTCSTORE.read_gtc_real" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads json strings in a csv file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>gtc_file</strong> – full name of a csv file</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a list of gtc uncertain reals</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.GTCSTORE.save_gtc">
+<span class="sig-name descname"><span class="pre">save_gtc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gtc_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gtc_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.GTCSTORE.save_gtc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores json strings in a csv file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gtc_list</strong> – a list of json strings</p></li>
+<li><p><strong>gtc_file</strong> – full name of a csv file</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>opens file, saves and closes before return</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.GTCSTORE.save_gtc_real">
+<span class="sig-name descname"><span class="pre">save_gtc_real</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gtc_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gtc_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.GTCSTORE.save_gtc_real" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores json strings in a csv file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gtc_list</strong> – a list of gtc uncertain reals</p></li>
+<li><p><strong>gtc_file</strong> – full name of a csv file</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>opens file, saves and closes before return</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.GTCSTORE.ucomplex_to_dict">
+<span class="sig-name descname"><span class="pre">ucomplex_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unc</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.GTCSTORE.ucomplex_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turns a GTC uncertain complex into a dictionary of its parts suitable for json storage.
+Retains nothing of the structure that created the uncertain real.
+A more useful label can be used if, for instance, it is an intermediate result.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>unc</strong> – a GTC uncertain complex</p></li>
+<li><p><strong>kwargs</strong> – ‘new_label’ if wanted</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a dictionary with all the necessary parts of the ureal</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.GTCSTORE.ucomplex_to_json">
+<span class="sig-name descname"><span class="pre">ucomplex_to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unc</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.GTCSTORE.ucomplex_to_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turns a GTC uncertain complex into a json string of a dictionary of its parts suitable for json storage.
+Retains nothing of the structure that created the uncertain real.
+A more useful label can be used if, for instance, it is an intermediate result.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>unc</strong> – a GTC uncertain complex</p></li>
+<li><p><strong>kwargs</strong> – ‘new_label’ if wanted</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a json string with all the necessary parts of the ureal</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.GTCSTORE.ureal_to_dict">
+<span class="sig-name descname"><span class="pre">ureal_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unr</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.GTCSTORE.ureal_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turns a GTC uncertain real into a dictionary of its parts suitable for json storage.
+Retains nothing of the structure that created the uncertain real.
+A more useful label can be used if, for instance, it is an intermediate result.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>unr</strong> – a GTC uncertain real</p></li>
+<li><p><strong>kwargs</strong> – ‘new_label’ if wanted</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a dictionary with all the necessary parts of the ureal</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.GTCSTORE.ureal_to_json">
+<span class="sig-name descname"><span class="pre">ureal_to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unr</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.GTCSTORE.ureal_to_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turns a GTC uncertain real into a dictionary of its parts and then into a json string for storage.
+Retains nothing of the structure that created the uncertain real.
+A more useful label can be used if, for instance, it is an intermediate result.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>unr</strong> – a GTC uncertain real</p></li>
+<li><p><strong>kwargs</strong> – ‘new_label’ if wanted</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a json string with all the necessary parts of a dictionary to make a ureal</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="archive.COMPONENTSTORE">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">archive.</span></span><span class="sig-name descname"><span class="pre">COMPONENTSTORE</span></span><a class="headerlink" href="#archive.COMPONENTSTORE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="archive.COMPONENTSTORE.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#archive.COMPONENTSTORE.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses GTCSTORE methods to save LEAD and CAPACITOR objects as JSON strings in CSV files. The methods are
+accessed through self.gs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.COMPONENTSTORE.capacitor_to_dict">
+<span class="sig-name descname"><span class="pre">capacitor_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cap</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.COMPONENTSTORE.capacitor_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a CAPACITOR object into a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cap</strong> – a CAPACITOR object</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a dictionary of CAPACITOR components</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.COMPONENTSTORE.dict_to_capacitor">
+<span class="sig-name descname"><span class="pre">dict_to_capacitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.COMPONENTSTORE.dict_to_capacitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recovers a CAPACITOR object from a dictionary created by capacitor_to_dict.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filed</strong> – a dictionary created by capacitor_to_dict</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a CAPACITOR object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.COMPONENTSTORE.dict_to_lead">
+<span class="sig-name descname"><span class="pre">dict_to_lead</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.COMPONENTSTORE.dict_to_lead" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recovering a LEAD object from a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filed</strong> – a dictionary that was created by lead_to_dict</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>LEAD object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="archive.COMPONENTSTORE.lead_to_dict">
+<span class="sig-name descname"><span class="pre">lead_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lead</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#archive.COMPONENTSTORE.lead_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a LEAD object into a dictionary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>lead</strong> – a LEAD object</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a dictionary of LEAD components</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="software-environment">
+<h1>Software Environment<a class="headerlink" href="#software-environment" title="Permalink to this headline">¶</a></h1>
+<section id="python">
+<h2>Python<a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h2>
+<p>This version is run with Python 3.9.5 and uses GTC version 1.3.4. All other packages are as supplied with Python.</p>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<p>This document has been produced by sphinx 4.0.2 installed in the GTC_py39 environment. Updating this document requires
+that the .rst files are updated in the /source directory of the project file. After updating these files the contents
+of /build/html should be deleted. Next using the miniconda text console activate the GTC_py39 environment (where Sphinx
+is installed), navigate to the project directory and run &gt;make html. This runs make.bat that creates the document in
+the /build/html folder, accessed by opening index.html. Note that restructured text files have strict format and
+command requirements so remember to check that your modifications appear correctly in the new html files. Also note that
+failing to delete the old html folders will result in an error when running make html. The /source directory also
+contains conf.py. This can be edited to alter the source directory for the project as well as the settings for
+extensions and themes used by Sphinx.</p>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h2>
+<p>The scripts and data for testing are in the testing folder. The test suite is run from the miniconda command line by
+navigating to CapacitanceScaletests folder and running pytest.</p>
+<img alt="_images/pytest.png" src="_images/pytest.png" />
+</section>
+</section>
+<section id="to-do">
+<h1>To Do<a class="headerlink" href="#to-do" title="Permalink to this headline">¶</a></h1>
+<p>Further expansion of these tests is desirable.</p>
+<p>The components module (CAPACITOR and LEAD classes) can be improved with the addition of</p>
+<ul class="simple">
+<li><p>temperature, pressure and humidity (in the case of high frequency air capacitors) coefficients,</p></li>
+<li><p>specific uncertainties for each of the admittances and impedances that comprise the full model (not just ‘relu’),</p></li>
+<li><p>possible frequency dependent behaviour for some components (beyond assuming constant C and G over a narrow frequency range),</p></li>
+<li><p>time dependence of capacitance values at a level suitable for predicting values between calibrations.</p></li>
+</ul>
+<p>Once this capacitance scale process has been exercised a few more times it might be beneficial to set up a GUI for both
+analysis and direct gathering of the data (remembering to ensure that the GUI is always an optional way of running the
+process, leaving the basic data structure unchanged).</p>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Capacitance Scale Project</a><ul>
+<li><a class="reference internal" href="#file-naming-convention">File Naming Convention</a></li>
+<li><a class="reference internal" href="#manual-input">Manual Input</a></li>
+<li><a class="reference internal" href="#output-summary">Output Summary</a></li>
+<li><a class="reference internal" href="#iteration">Iteration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-main">Main</a><ul>
+<li><a class="reference internal" href="#module-cal_balance">Cal Balance</a></li>
+<li><a class="reference internal" href="#module-cal_main_ratio">Cal Main Ratio</a></li>
+<li><a class="reference internal" href="#module-meas_cap_ratio">Meas Cap Ratio</a></li>
+<li><a class="reference internal" href="#module-summary_check">Summary</a></li>
+<li><a class="reference internal" href="#module-constraint">Constraint</a></li>
+<li><a class="reference internal" href="#module-components">Components</a></li>
+<li><a class="reference internal" href="#module-create_component">Create Component</a></li>
+<li><a class="reference internal" href="#module-archive">Archive</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#software-environment">Software Environment</a><ul>
+<li><a class="reference internal" href="#python">Python</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+<li><a class="reference internal" href="#testing">Testing</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#to-do">To Do</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">Capacitance Scale 0.9 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Capacitance Scale Project</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, Keith Jones.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.0.2.
+    </div>
+  </body>
+</html>

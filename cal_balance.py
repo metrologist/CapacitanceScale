@@ -60,7 +60,7 @@ class DIALCAL(object):
                     c1 = row[1]  #self.store.json_to_ucomplex(row[1])
                 elif row[0] == 'c2':
                     c2 = row[1]  #self.store.json_to_ucomplex(row[1])
-                elif row[0] == 'label z3':
+                elif row[0] == 'label y3':
                     label_y3 = row[1]
                 elif row[0] == 'r3':
                     r3 = float(row[1])

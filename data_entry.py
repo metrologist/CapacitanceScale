@@ -67,6 +67,13 @@ class ENTRY(EXAMPLE):
                 self.dial_box_beta[count].SetBackgroundColour((255, 51, 51))
                 count = count + 1
 
+    def on_enter_comment(self, e):
+        comment = self.comment_box.GetLineText(0)
+        row = self.spinControl.GetValue() - 1
+        print(comment)
+        self.data_grid.SetCellValue(row, 4, comment)
+
+
 def main():
     app = wx.App()
     ex = ENTRY(None, title='Data entry from Universal Bridge')
