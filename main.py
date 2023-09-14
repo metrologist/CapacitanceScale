@@ -80,5 +80,5 @@ capacitance = select.imag / buildup.w
 print(capacitance)
 print('budget')
 print(capacitance.u / capacitance * 1e6)
-for label, u in budget(capacitance, trim=0):
+for label, u, id_thing in budget(capacitance, trim=0):
     print("{:^20} {:.2e}   {:.3f}".format(label, u, u / capacitance.x * 1e6))
