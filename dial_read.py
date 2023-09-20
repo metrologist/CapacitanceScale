@@ -112,10 +112,10 @@ class READOUT(object):
                         x = slice(pointer, pointer + 1, 1)
                         output.append(dial_reading[x])
                         pointer = pointer + 1
-                else:
-                    x = slice(pointer, pointer + 1, 1)
-                    output.append(dial_reading[x])
-                    pointer = pointer + 1
+            else:
+                x = slice(pointer, pointer + 1, 1)
+                output.append(dial_reading[x])
+                pointer = pointer + 1
         # final check
         # check = False
         start = 0

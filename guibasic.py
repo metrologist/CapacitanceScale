@@ -8,7 +8,7 @@ from wx import grid as wxgrid
 
 class EXAMPLE(wx.Frame):
     def __init__(self, *args, **kwargs):
-        super(EXAMPLE, self).__init__(*args, **kwargs)
+        super(EXAMPLE, self).__init__( *args, **kwargs)
         self.InitUI()
 
     def InitUI(self):
@@ -32,7 +32,7 @@ class EXAMPLE(wx.Frame):
 
         dial_size = (30, 30)
         step_x = dial_size[0]
-        n = 6  # number of alpha dials
+        n = 7  # number of alpha dials
         m = 7  # number of beta dials
         start_xy = (30, 150)
         self.dial_box_alpha = []
@@ -62,8 +62,8 @@ class EXAMPLE(wx.Frame):
         self.hint = wx.StaticText(self.pnl, pos=(30, 220))
         self.hint.SetLabel('select cell and then right click to set row number')
 
-        self.data_grid = wxgrid.Grid(self.pnl, size=(844,300), pos=(30,250))
-        rows = 14
+        self.data_grid = wxgrid.Grid(self.pnl, size=(844,245), pos=(30,250))
+        rows = 11
         cols = 5
         self.data_grid.CreateGrid(rows, cols)
         colLabels = ['alpha', 'beta', 'alpha', 'beta', 'description']
@@ -72,6 +72,7 @@ class EXAMPLE(wx.Frame):
         self.data_grid.SetColSize(2,150)
         self.data_grid.SetColSize(3,150)
         self.data_grid.SetColSize(4,300)
+        self.data_grid.SetRowLabelValue(10, '1')
 
         self.data_grid.Bind(wxgrid.EVT_GRID_CELL_RIGHT_CLICK, self.on_grid)
         for i in range(rows):
@@ -104,6 +105,9 @@ class EXAMPLE(wx.Frame):
         :return:
         """
         self.spinControl.SetValue(self.data_grid.GetGridCursorRow() + 1)
+        self.enter_alpha.SetValue('')
+        self.enter_beta.SetValue('')
+        self.comment_box.SetValue('')
 
     def on_enter_comment(self, e):
         pass
@@ -111,6 +115,7 @@ class EXAMPLE(wx.Frame):
 def main():
     app = wx.App()
     ex = EXAMPLE(None, title='Dial entry from IVDs')
+    # ex = EXAMPLE( 7,  7, 'Permutable')
     ex.Show()
     app.MainLoop()
 

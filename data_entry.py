@@ -6,8 +6,8 @@ from dial_read import READOUT
 class ENTRY(EXAMPLE):
     def __init__(self, *args, **kwargs):
         super(ENTRY, self).__init__(*args, **kwargs)
-        pattern_ivd_a = {'number': 6, 'input_style': 'twelve_step', 'sign': False}
-        pattern_ivd_b = {'number': 7, 'input_style': 'twelve_step', 'sign': False}
+        pattern_ivd_a = {'number': 7, 'input_style': 'ten_step', 'sign': True}
+        pattern_ivd_b = {'number': 7, 'input_style': 'ten_step', 'sign': True}
         self.readout_alpha = READOUT(pattern_ivd_a)
         self.readout_beta = READOUT(pattern_ivd_b)
 
@@ -76,7 +76,7 @@ class ENTRY(EXAMPLE):
 
 def main():
     app = wx.App()
-    ex = ENTRY(None, title='Data entry from Universal Bridge')
+    ex = ENTRY(None, title='Permutable capacitor')
     ex.Show()
     app.MainLoop()
 
