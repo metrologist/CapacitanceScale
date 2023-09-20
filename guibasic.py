@@ -12,12 +12,16 @@ class EXAMPLE(wx.Frame):
         self.InitUI()
 
     def InitUI(self):
-        menubar = wx.MenuBar()
+        menubar = wx.MenuBar(0)
         fileMenu = wx.Menu()
-        fileItem = fileMenu.Append(wx.ID_EXIT, 'Quit', 'Quit application')
-        menubar.Append(fileMenu, '&File')
+        menuItem1 = wx.MenuItem(fileMenu, wx.ID_ANY, u"Save", wx.EmptyString, wx.ITEM_NORMAL)
+        menuItem2 = wx.MenuItem(fileMenu, wx.ID_ANY, u"Quit", wx.EmptyString, wx.ITEM_NORMAL)
+        fileMenu.Append(menuItem1)
+        fileMenu.Append(menuItem2)
+        menubar.Append(fileMenu, 'File')
         self.SetMenuBar(menubar)
-        self.Bind(wx.EVT_MENU, self.OnQuit, fileItem)
+        self.Bind(wx.EVT_MENU, self.OnQuit, menuItem2)
+        self.Bind(wx.EVT_MENU, self.OnSave, menuItem1)
 
         self.pnl = wx.Panel(self)
         self.alpha_heading = wx.StaticText(self.pnl, pos=(30, 70))
@@ -96,7 +100,11 @@ class EXAMPLE(wx.Frame):
         pass
 
     def OnQuit(self, e):
-        self.Close()
+        self.Destroy()
+        wx.Exit()
+
+    def OnSave(self, e):
+        pass
 
     def on_grid(self, e):
         """
@@ -115,7 +123,6 @@ class EXAMPLE(wx.Frame):
 def main():
     app = wx.App()
     ex = EXAMPLE(None, title='Dial entry from IVDs')
-    # ex = EXAMPLE( 7,  7, 'Permutable')
     ex.Show()
     app.MainLoop()
 
