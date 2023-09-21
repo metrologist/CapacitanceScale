@@ -1,6 +1,7 @@
 import wx
 from guibasic import EXAMPLE
 from dial_read import READOUT
+import time
 
 
 class ENTRY(EXAMPLE):
@@ -12,6 +13,7 @@ class ENTRY(EXAMPLE):
         self.readout_beta = READOUT(pattern_ivd_b)
 
     def on_enter_alpha(self, e):
+        row = -1  # default so that time will not be set if a row is not defined
         alpha_string = self.enter_alpha.GetLineText(0)  # only using line 0, enter triggers event
         alpha = list(alpha_string)  # convert string to list
         for i in range(len(alpha)):
@@ -21,6 +23,7 @@ class ENTRY(EXAMPLE):
         for x in alpha:
             alpha_string = alpha_string + x
         reading = self.readout_alpha.input_by_string(alpha_string)
+        print(reading[1])
         if reading[1]:
             count = 0
             for x in reading[0]:
@@ -34,10 +37,13 @@ class ENTRY(EXAMPLE):
             self.data_grid.SetCellValue(row, 0, alpha_string)
         else:
             count = 0
-            for x in reading[0]:
+            for x in range(7):  #reading[0]:
                 self.dial_box_alpha[count].SetValue('_')
                 self.dial_box_alpha[count].SetBackgroundColour((255, 51, 51))
                 count = count + 1
+        now = self.get_time()
+        if row >= 0:
+            self.data_grid.SetCellValue(row, 5, now)
 
     def on_enter_beta(self, e):
         beta_string = self.enter_beta.GetLineText(0)  # only using line 0, enter triggers event
@@ -72,6 +78,48 @@ class ENTRY(EXAMPLE):
         row = self.spinControl.GetValue() - 1
         print(comment)
         self.data_grid.SetCellValue(row, 4, comment)
+
+    def get_time(self):
+        now = time.localtime()  # structured local time
+        now_string = time.strftime("%H:%M:%S, %d/%m/%Y", now)
+        return now_string
+
+    def OnOpen(self, e):
+        with wx.FileDialog(self, "Open XYZ file", wildcard="XYZ files (*.xyz)|*.xyz",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+
+            # Proceed loading the file chosen by the user
+            pathname = fileDialog.GetPath()
+            try:
+                with open(pathname, 'r') as file:
+                    self.doLoadDataOrWhatever(file)
+            except IOError:
+                wx.LogError("Cannot open file '%s'." % newfile)
+
+    def doLoadDataOrWhatever(self, file):
+        pass
+
+    def OnSave(self, e):
+        with wx.FileDialog(self, "Save XYZ file", wildcard="XYZ files (*.xyz)|*.xyz",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+
+            # save the current contents in the file
+            pathname = fileDialog.GetPath()
+            try:
+                with open(pathname, 'w') as file:
+                    self.doSaveData(file)
+            except IOError:
+                wx.LogError("Cannot save current data in file '%s'." % pathname)
+
+    def doSaveData(self, file):
+        pass
+
 
 
 def main():
