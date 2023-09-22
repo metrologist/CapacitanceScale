@@ -2,6 +2,7 @@ import wx
 from guibasic import EXAMPLE
 from dial_read import READOUT
 import time
+import csv
 
 
 class ENTRY(EXAMPLE):
@@ -23,7 +24,6 @@ class ENTRY(EXAMPLE):
         for x in alpha:
             alpha_string = alpha_string + x
         reading = self.readout_alpha.input_by_string(alpha_string)
-        print(reading[1])
         if reading[1]:
             count = 0
             for x in reading[0]:
@@ -76,7 +76,6 @@ class ENTRY(EXAMPLE):
     def on_enter_comment(self, e):
         comment = self.comment_box.GetLineText(0)
         row = self.spinControl.GetValue() - 1
-        print(comment)
         self.data_grid.SetCellValue(row, 4, comment)
 
     def get_time(self):
@@ -95,7 +94,8 @@ class ENTRY(EXAMPLE):
             pathname = fileDialog.GetPath()
             try:
                 with open(pathname, 'r') as file:
-                    self.doLoadDataOrWhatever(file)
+                    data = self.doLoadDataOrWhatever(pathname)
+                    self.load_wx_data(data)
             except IOError:
                 wx.LogError("Cannot open file '%s'." % newfile)
 
@@ -113,12 +113,57 @@ class ENTRY(EXAMPLE):
             pathname = fileDialog.GetPath()
             try:
                 with open(pathname, 'w') as file:
-                    self.doSaveData(file)
+                    self.doSaveData(pathname)
             except IOError:
                 wx.LogError("Cannot save current data in file '%s'." % pathname)
 
     def doSaveData(self, file):
-        pass
+        data = self.get_wx_data()
+        with open(file, 'w', newline='') as csvfile:
+            out_writer = csv.writer(csvfile)
+            for x in data:
+                out_writer.writerow(x)
+
+    def get_wx_data(self):
+        data = []  # squeeze everything into a list of lists
+        # first the grid
+        cols = self.data_grid.GetNumberCols()
+        rows = self.data_grid.GetNumberRows()
+        for i in range(rows):
+            byrow = []  # each item in data is a list holding the row data
+            for j in range(cols):
+                byrow.append(self.data_grid.GetCellValue(i, j))
+            data.append(byrow)
+        # then the free text
+        no_lines = self.freetext.GetNumberOfLines()
+        text = []
+        for i in range(no_lines):
+            text.append(self.freetext.GetLineText(i))
+        data.append(text)
+        print(data)
+        return data
+
+    def load_wx_data(self, data):
+        # inserts a list of lists back into the gui
+        print('data:', data)
+        for i in range(12):
+            for j in range(6):
+                self.data_grid.SetCellValue(i, j, data[i][j])
+        for x in data[i + 1]:  # this should be the free text
+            self.freetext.WriteText(x)
+            self.freetext.WriteText('\n')
+
+    def doLoadDataOrWhatever(self, file):
+        data = []
+        with open(file, newline='') as csvfile:  # format must be correct
+            reader = csv.reader(csvfile)
+            for row in reader:
+                data.append(row)
+        return data  # should be the reconstituted data list
+
+
+
+
 
 
 

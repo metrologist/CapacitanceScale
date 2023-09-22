@@ -73,8 +73,8 @@ class EXAMPLE(wx.Frame):
         self.hint = wx.StaticText(self.pnl, pos=(30, 220))
         self.hint.SetLabel('select cell and then right click to set row number')
 
-        self.data_grid = wxgrid.Grid(self.pnl, size=(960,245), pos=(30,250))
-        rows = 11
+        self.data_grid = wxgrid.Grid(self.pnl, size=(960,260), pos=(30,250))
+        rows = 12
         cols = 6
         self.data_grid.CreateGrid(rows, cols)
         colLabels = ['alpha', 'beta', 'alpha', 'beta', 'comment', 'time entered']
@@ -84,7 +84,7 @@ class EXAMPLE(wx.Frame):
         self.data_grid.SetColSize(3,150)
         self.data_grid.SetColSize(4,300)
         self.data_grid.SetColSize(5, 110)
-        self.data_grid.SetRowLabelValue(10, '1')
+        self.data_grid.SetRowLabelValue(11, '1')
 
         self.data_grid.Bind(wxgrid.EVT_GRID_CELL_RIGHT_CLICK, self.on_grid)
         for i in range(rows):
@@ -135,6 +135,7 @@ class EXAMPLE(wx.Frame):
 
     def on_enter_comment(self, e):
         pass
+
 
 def main():
     app = wx.App()
