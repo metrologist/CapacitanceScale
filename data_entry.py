@@ -84,7 +84,7 @@ class ENTRY(EXAMPLE):
         return now_string
 
     def OnOpen(self, e):
-        with wx.FileDialog(self, "Open XYZ file", wildcard="XYZ files (*.xyz)|*.xyz",
+        with wx.FileDialog(self, "Open WSH file", wildcard="WSH files (*.wsh)|*.wsh",
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
 
             if fileDialog.ShowModal() == wx.ID_CANCEL:
@@ -103,7 +103,7 @@ class ENTRY(EXAMPLE):
         pass
 
     def OnSave(self, e):
-        with wx.FileDialog(self, "Save XYZ file", wildcard="XYZ files (*.xyz)|*.xyz",
+        with wx.FileDialog(self, "Save WSH file", wildcard="wsh files (*.wsh)|*.wsh",
                            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
 
             if fileDialog.ShowModal() == wx.ID_CANCEL:
@@ -117,6 +117,21 @@ class ENTRY(EXAMPLE):
             except IOError:
                 wx.LogError("Cannot save current data in file '%s'." % pathname)
 
+    def OnSave2(self, e):
+        with wx.FileDialog(self, "Save CSV file", wildcard="csv files (*.csv)|*.csv",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+
+            # save the current contents in the file
+            pathname = fileDialog.GetPath()
+            try:
+                with open(pathname, 'w') as file:
+                    self.doSaveData2(pathname)
+            except IOError:
+                wx.LogError("Cannot save current data in file '%s'." % pathname)
+
     def doSaveData(self, file):
         data = self.get_wx_data()
         with open(file, 'w', newline='') as csvfile:
@@ -124,7 +139,33 @@ class ENTRY(EXAMPLE):
             for x in data:
                 out_writer.writerow(x)
 
+    def doSaveData2(self, file):
+        data = self.get_wx_data2()
+        with open(file, 'w', newline='') as csvfile:
+            out_writer = csv.writer(csvfile)
+            for x in data:
+                out_writer.writerow(x)
+
     def get_wx_data(self):
+        data = []  # squeeze everything into a list of lists
+        # first the grid
+        cols = self.data_grid.GetNumberCols()
+        rows = self.data_grid.GetNumberRows()
+        for i in range(rows):
+            byrow = []  # each item in data is a list holding the row data
+            for j in range(cols):
+                byrow.append(self.data_grid.GetCellValue(i, j))
+            data.append(byrow)
+        # then the free text
+        no_lines = self.freetext.GetNumberOfLines()
+        text = []
+        for i in range(no_lines):
+            text.append(self.freetext.GetLineText(i))
+        data.append(text)
+        return data
+
+    def get_wx_data2(self):
+        # to create csv file for processing
         data = []  # squeeze everything into a list of lists
         # first the grid
         cols = self.data_grid.GetNumberCols()

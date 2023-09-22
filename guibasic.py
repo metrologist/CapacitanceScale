@@ -106,6 +106,21 @@ class EXAMPLE(wx.Frame):
         self.freetext = wx.TextCtrl(self.pnl, size=(600, 130), style=wx.TE_MULTILINE |wx.TEXT_ALIGNMENT_LEFT,
                                        pos=(30, 540))
 
+        self.header = wx.StaticText(self.pnl, pos=(680, 520))
+        self.header.SetLabel('Header Text')
+        self.headertext = wxgrid.Grid(self.pnl, size=(245,95), pos=(680,540))
+        rows = 3
+        cols = 2
+        self.headertext.CreateGrid(rows, cols)
+        colLabels = ['item', 'value']
+        for col in range(len(colLabels)):
+            self.headertext.SetColLabelValue(col, colLabels[col])
+        self.headertext.SetCellValue(0, 0, 'Date')
+        self.headertext.SetCellValue(1, 0, 'Reference')
+        self.headertext.SetCellValue(2, 0, 'w')
+        self.headertext.SetCellValue(2, 1, '1e4')
+
+
 
         self.SetSize((1100, 750))
         self.Centre()
