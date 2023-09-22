@@ -18,17 +18,21 @@ class EXAMPLE(wx.Frame):
         self.SetIcon(icon)
         menubar = wx.MenuBar(0)
         fileMenu = wx.Menu()
-        menuItem3 = wx.MenuItem(fileMenu, wx.ID_ANY, u"Open", wx.EmptyString, wx.ITEM_NORMAL)
-        menuItem1 = wx.MenuItem(fileMenu, wx.ID_ANY, u"Save", wx.EmptyString, wx.ITEM_NORMAL)
+        menuItem3 = wx.MenuItem(fileMenu, wx.ID_ANY, u"Open worksheet", wx.EmptyString, wx.ITEM_NORMAL)
+        menuItem1 = wx.MenuItem(fileMenu, wx.ID_ANY, u"Save worksheet", wx.EmptyString, wx.ITEM_NORMAL)
+        menuItem4 = wx.MenuItem(fileMenu, wx.ID_ANY, u"Save ratiocal csv", wx.EmptyString, wx.ITEM_NORMAL)
         menuItem2 = wx.MenuItem(fileMenu, wx.ID_ANY, u"Quit", wx.EmptyString, wx.ITEM_NORMAL)
         fileMenu.Append(menuItem3)
         fileMenu.Append(menuItem1)
+        fileMenu.Append(menuItem4)
         fileMenu.Append(menuItem2)
+
         menubar.Append(fileMenu, 'File')
         self.SetMenuBar(menubar)
         self.Bind(wx.EVT_MENU, self.OnQuit, menuItem2)
         self.Bind(wx.EVT_MENU, self.OnSave, menuItem1)
         self.Bind(wx.EVT_MENU, self.OnOpen, menuItem3)
+        self.Bind(wx.EVT_MENU, self.OnSave2, menuItem4)
 
         self.pnl = wx.Panel(self)
         self.alpha_heading = wx.StaticText(self.pnl, pos=(30, 70))
@@ -117,6 +121,9 @@ class EXAMPLE(wx.Frame):
         wx.Exit()
 
     def OnSave(self, e):
+        pass
+
+    def OnSave2(self, e):
         pass
 
     def OnOpen(selfself, e):

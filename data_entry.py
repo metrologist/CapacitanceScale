@@ -8,8 +8,8 @@ import csv
 class ENTRY(EXAMPLE):
     def __init__(self, *args, **kwargs):
         super(ENTRY, self).__init__(*args, **kwargs)
-        pattern_ivd_a = {'number': 7, 'input_style': 'ten_step', 'sign': True}
-        pattern_ivd_b = {'number': 7, 'input_style': 'ten_step', 'sign': True}
+        pattern_ivd_a = {'number': 7, 'input_style': 'eleven_step', 'sign': True}
+        pattern_ivd_b = {'number': 7, 'input_style': 'eleven_step', 'sign': True}
         self.readout_alpha = READOUT(pattern_ivd_a)
         self.readout_beta = READOUT(pattern_ivd_b)
 
@@ -97,7 +97,7 @@ class ENTRY(EXAMPLE):
                     data = self.doLoadDataOrWhatever(pathname)
                     self.load_wx_data(data)
             except IOError:
-                wx.LogError("Cannot open file '%s'." % newfile)
+                wx.LogError("Cannot open file '%s'." % pathname)
 
     def doLoadDataOrWhatever(self, file):
         pass
@@ -140,12 +140,10 @@ class ENTRY(EXAMPLE):
         for i in range(no_lines):
             text.append(self.freetext.GetLineText(i))
         data.append(text)
-        print(data)
         return data
 
     def load_wx_data(self, data):
         # inserts a list of lists back into the gui
-        print('data:', data)
         for i in range(12):
             for j in range(6):
                 self.data_grid.SetCellValue(i, j, data[i][j])
@@ -160,12 +158,6 @@ class ENTRY(EXAMPLE):
             for row in reader:
                 data.append(row)
         return data  # should be the reconstituted data list
-
-
-
-
-
-
 
 def main():
     app = wx.App()
