@@ -1,10 +1,6 @@
 from openpyxl import Workbook, load_workbook
 from GTC import ureal
-from warnings import simplefilter
 from predictor import PREDICT as pre
-from datetime import datetime as dt
-from dateutil import parser
-import time
 from matplotlib import pyplot as plt
 
 class EXCEL(object):
@@ -169,62 +165,89 @@ if __name__ == '__main__':
 
     # Plotting, so first create plottable arrays
     GR10 = []
+    uGR10 = []
     for x in gr10:
         GR10.append(x.x)
+        uGR10.append(x.u)
     GR100 = []
+    uGR100 = []
     for x in gr100:
         GR100.append(x.x)
+        uGR100.append(x.u)
     GR1000B = []
+    uGR1000B = []
     for x in gr1000b:
         GR1000B.append(x.x)
+        uGR1000B.append(x.u)
     GR1000A = []
+    uGR1000A = []
     for x in gr1000a:
         GR1000A.append(x.x)
+        uGR1000A.append(x.u)
 
     AH11A2 = []
+    uAH11A2 = []
     for x in ah11a2:
         AH11A2.append(x.x)
+        uAH11A2.append(x.u)
     AH11B2 = []
+    uAH11B2 = []
     for x in ah11b2:
         AH11B2.append(x.x)
+        uAH11B2.append(x.u)
     AH11C2 = []
+    uAH11C2 = []
     for x in ah11c2:
         AH11C2.append(x.x)
+        uAH11C2.append(x.u)
     AH11D2 = []
+    uAH11D2 = []
     for x in ah11d2:
         AH11D2.append(x.x)
+        uAH11D2.append(x.u)
 
     AH11A1 = []
+    uAH11A1 = []
     for x in ah11a1:
         AH11A1.append(x.x)
+        uAH11A1.append(x.u)
     AH11B1 = []
+    uAH11B1 = []
     for x in ah11b1:
         AH11B1.append(x.x)
+        uAH11B1.append(x.u)
     AH11C1 = []
+    uAH11C1 = []
     for x in ah11c1:
         AH11C1.append(x.x)
+        uAH11C1.append(x.u)
     AH11D1 = []
+    uAH11D1 = []
     for x in ah11d1:
         AH11D1.append(x.x)
+        uAH11D1.append(x.u)
 
     print('GR10 =', GR10)
     print('GR100 =', GR100)
     print('GR1000A =', GR1000A)
     print('GR1000B =', GR1000B)
 
+    barsize = 4  # points for errorbar cap
+    dotsize = 4
+
     fig, axs = plt.subplots(3, 1, layout='constrained', sharex=True)
-    axs[0].plot(plot_date, GR10, label='GR10')
-    axs[0].plot(plot_date, GR100, label = 'GR100')
-    axs[0].plot(plot_date, GR1000A, label = 'GR1000A')
-    axs[0].plot(plot_date, GR1000B, label = 'GR1000B')
-    axs[1].plot(plot_date, AH11A2, label = 'AH11A2')
-    axs[1].plot(plot_date, AH11B2, label = 'AH11B2')
-    axs[1].plot(plot_date, AH11C2, label = 'AH11C2')
-    axs[1].plot(plot_date, AH11D2, label = 'AH11D2')
-    axs[2].plot(plot_date, AH11A1, label = 'AH11A1')
-    axs[2].plot(plot_date, AH11B1, label = 'AH11B1')
-    axs[2].plot(plot_date, AH11C1, label = 'AH11C1')
-    axs[2].plot(plot_date, AH11D1, label = 'AH11D1')
+    axs[0].errorbar(plot_date, GR10, yerr=uGR10, capsize=barsize, label='GR10', marker='o', markersize=dotsize)
+    axs[0].errorbar(plot_date, GR100, yerr=uGR100, capsize=barsize, label = 'GR100', marker='o', markersize=dotsize)
+    axs[0].errorbar(plot_date, GR1000A, yerr=uGR1000A, capsize=barsize, label = 'GR1000A', marker='o', markersize=dotsize)
+    axs[0].errorbar(plot_date, GR1000B, yerr=uGR1000A, capsize=barsize, label = 'GR1000B', marker='o', markersize=dotsize)
+    axs[1].errorbar(plot_date, AH11A2, yerr=uAH11A2, capsize=barsize, label = 'AH11A2', marker='o', markersize=dotsize)
+    axs[1].errorbar(plot_date, AH11B2, yerr=uAH11B2, capsize=barsize, label = 'AH11B2', marker='o', markersize=dotsize)
+    axs[1].errorbar(plot_date, AH11C2, yerr=uAH11C2, capsize=barsize, label = 'AH11C2', marker='o', markersize=dotsize)
+    axs[1].errorbar(plot_date, AH11D2, yerr=uAH11D2, capsize=barsize, label = 'AH11D2', marker='o', markersize=dotsize)
+    axs[2].errorbar(plot_date, AH11A1, yerr=uAH11A1, capsize=barsize, label = 'AH11A1', marker='o', markersize=dotsize)
+    axs[2].errorbar(plot_date, AH11B1, yerr=uAH11B1, capsize=barsize, label = 'AH11B1', marker='o', markersize=dotsize)
+    axs[2].errorbar(plot_date, AH11C1, yerr=uAH11C1, capsize=barsize, label = 'AH11C1', marker='o', markersize=dotsize)
+    axs[2].errorbar(plot_date, AH11D1, yerr=uAH11D1, capsize=barsize, label = 'AH11D1', marker='o', markersize=dotsize)
     axs[0].legend()
     axs[1].legend()
     axs[2].legend()
