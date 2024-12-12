@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     input = EXCEL(r"AH2700A checks KJ.xlsx")
     # extract conditions
-    data = input.getdata_block('Conditions', [3, 27, 4, 7])
+    data = input.getdata_block('Conditions', [3, 28, 4, 7])
     pressure = []
     grtemp = []
     sballtemp = []
