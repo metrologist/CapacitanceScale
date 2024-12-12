@@ -2,7 +2,7 @@ from openpyxl import Workbook, load_workbook
 from GTC import ureal
 from predictor import PREDICT as pre
 from matplotlib import pyplot as plt
-
+# first tidying up attempt
 class EXCEL(object):
     def __init__(self, source):
         self.source = source
@@ -12,13 +12,11 @@ class EXCEL(object):
         'datasheet' is the name of the calc worksheet
         'block_range' is a 4 element list [start row, finish row, start column, finish column]
         """
-        # simplefilter('ignore')  # hide 'Cannot parse header or footer so it will be ignored'
         try:
             wb2 = load_workbook(self.source, data_only=True)  # reads numbers rather than formulae
         except PermissionError:
             print('Permission error: Could not open file in "get_data_block" method of Excel.py')
             exit(1)
-        # simplefilter('default')  # and allow warnings again
         sheet = wb2[datasheet]
         selected_rows = []
         for i in range(block_range[0], block_range[1] + 1):
@@ -56,28 +54,40 @@ if __name__ == '__main__':
     gr1000b = []
     ub1000 = []
     es13 = []
+    es16 = []
+    es14 = []
     plot_date = []
 
     input = EXCEL(r"AH2700A checks KJ.xlsx")
+    all_sheets = input.get_sheets()
+    excluded_meta_sheets = ['Checks', 'Summary', 'KJ notes', 'Conditions']
+    nmbr_temp_points = len(all_sheets) - len(excluded_meta_sheets) # need conditions for each data set
     # extract conditions
-    data = input.getdata_block('Conditions', [3, 28, 4, 7])
+    data = input.getdata_block('Conditions', [3, 3 + nmbr_temp_points - 1, 4, 9])
     pressure = []
     grtemp = []
     sballtemp = []
+    pctemp = []
+    ubtemp = []
     for x in data:
         pressure.append(x[1])
         grtemp.append(x[2])
         sballtemp.append(x[3])
-    print(pressure)
-    print(grtemp)
-    print(sballtemp)
+        pctemp.append(x[4])
+        ubtemp.append(x[5])
+    print('pressure =',pressure)
+    print('grtemp =', grtemp)
+    print('sballtemp =', sballtemp)
+    print('pctemp =', pctemp)
+    print('ubtemp =', ubtemp)
 
     n_sample = 10  # could be extracted from spreadsheet
     sheets = input.get_sheets()
     print('sheets', sheets)
     count = 0  # just use counter to index relevant conditions ..... this is risky!
     for s in sheets:
-        if s != 'Checks' and s != 'Summary' and s != 'KJ notes' and s != 'Conditions':
+        if s not in excluded_meta_sheets:
+        # if s != 'Checks' and s != 'Summary' and s != 'KJ notes' and s != 'Conditions':
             print(s)
             # note that sensitivity coefficients are entered here if available
             all_caps = {'zero': {'name': 'zero'},
@@ -110,10 +120,6 @@ if __name__ == '__main__':
                     uer = (x[3] / all_caps[myname]['nom_val']  * 1e6)
                     rel_err = ureal(er, uer, n_sample - 1, label = myname)
                     all_caps[myname]['err'] = rel_err
-                # else:
-                #     print('Help! Not a recognised name.')
-            # for x in all_caps:
-            #     print(all_caps[x])
 
             # consider correction required for the AH2700A to give the predicted reading
             ref = pre()  # the set chosen as the reference
@@ -126,23 +132,22 @@ if __name__ == '__main__':
             corb = b_est - all_caps['ah11b1']['err']
             corc = c_est - all_caps['ah11c1']['err']
             cord = d_est - all_caps['ah11d1']['err']
-            # print(cora, corb, corc, cord)
             # might use the average correction for all capacitors in the first instance
             correction = (cora + corb + corc + cord) / 4  # note the lack of correlation gives a lower uncertainty in the mean
-            # print('correction=', correction, 'ppm')
 
             # apply this correction to all measurements?
             for x in all_caps:
                 if x != 'zero':
-                    # print('x=', x)
                     all_caps[x]['cor_val'] = all_caps[x]['err'] + correction  # pressure & temp could be here
                     if 'tco' in all_caps[x] and 'pco' in all_caps[x]:
-                        # print(all_caps[x]['name'], all_caps[x]['tco'],grtemp[count])
-                        tcor = (24 - grtemp[count]) * all_caps[x]['tco']
-                        pcor = (1000 - pressure[count]) * all_caps[x]['pco']
-                        all_caps[x]['cor_val'] = all_caps[x]['cor_val'] + tcor + pcor
-                    # print(all_caps[x])
-            # print(a_est, b_est, c_est, d_est)
+                        try:
+                            tcor = (24 - grtemp[count]) * all_caps[x]['tco']
+                            pcor = (1000 - pressure[count]) * all_caps[x]['pco']
+                            all_caps[x]['cor_val'] = all_caps[x]['cor_val'] + tcor + pcor
+                        except IndexError:
+                            print('!!!!! missing information !!!!')
+                            print('Check that every data set has matching temperature and pressure in "Conditions" worksheet.')
+                            exit(1)
 
             ah11a1.append(all_caps['ah11a1']['cor_val'])
             ah11b1.append(all_caps['ah11b1']['cor_val'])
@@ -156,103 +161,57 @@ if __name__ == '__main__':
             gr100.append(all_caps['gr100']['cor_val'])
             gr1000a.append(all_caps['gr1000a']['cor_val'])
             gr1000b.append(all_caps['gr1000b']['cor_val'])
-            es13 .append(all_caps['es13']['cor_val'])
+            es13.append(all_caps['es13']['cor_val'])
+            es16.append(all_caps['es16']['cor_val'])
+            es14.append(all_caps['es14']['cor_val'])
             ub1000.append(all_caps['ub1000']['cor_val'])
             plot_date.append(all_caps['ah11a1']['PlotDate'])  # this will need to be matplotlib compatible
             count += 1
-    # print(ah11a1)
-    # print(ub1000)
 
-    # Plotting, so first create plottable arrays
-    GR10 = []
-    uGR10 = []
-    for x in gr10:
-        GR10.append(x.x)
-        uGR10.append(x.u)
-    GR100 = []
-    uGR100 = []
-    for x in gr100:
-        GR100.append(x.x)
-        uGR100.append(x.u)
-    GR1000B = []
-    uGR1000B = []
-    for x in gr1000b:
-        GR1000B.append(x.x)
-        uGR1000B.append(x.u)
-    GR1000A = []
-    uGR1000A = []
-    for x in gr1000a:
-        GR1000A.append(x.x)
-        uGR1000A.append(x.u)
+    # put all the corrected values in a new dictionary
 
-    AH11A2 = []
-    uAH11A2 = []
-    for x in ah11a2:
-        AH11A2.append(x.x)
-        uAH11A2.append(x.u)
-    AH11B2 = []
-    uAH11B2 = []
-    for x in ah11b2:
-        AH11B2.append(x.x)
-        uAH11B2.append(x.u)
-    AH11C2 = []
-    uAH11C2 = []
-    for x in ah11c2:
-        AH11C2.append(x.x)
-        uAH11C2.append(x.u)
-    AH11D2 = []
-    uAH11D2 = []
-    for x in ah11d2:
-        AH11D2.append(x.x)
-        uAH11D2.append(x.u)
+    all_plots = {   'ah11a1': {'name': 'ah11a1', 'nom_val': 10, 'val': ah11a1},
+                    'ah11b1': {'name': 'ah11b1', 'nom_val': 10, 'val': ah11b1},
+                    'ah11c1': {'name': 'ah11c1', 'nom_val': 100, 'val': ah11c1},
+                    'ah11d1': {'name': 'ah11d1', 'nom_val': 100, 'val': ah11d1},
+                    'ah11a2': {'name': 'ah11a2', 'nom_val': 10, 'val': ah11a2},
+                    'ah11b2': {'name': 'ah11b2', 'nom_val': 10, 'val': ah11b2},
+                    'ah11c2': {'name': 'ah11c2', 'nom_val': 100, 'val': ah11c2},
+                    'ah11d2': {'name': 'ah11d2', 'nom_val': 100, 'val': ah11d2},
+                    'gr10': {'name': 'gr10', 'nom_val': 10, 'val': gr10},
+                    'gr100': {'name': 'gr100', 'nom_val': 100, 'val': gr100},
+                    'gr1000a': {'name': 'gr1000a', 'nom_val': 1000, 'val': gr1000a},
+                    'gr1000b': {'name': 'gr1000b', 'nom_val': 1000, 'val': gr1000b},
+                    'es13': {'name': 'es13', 'nom_val': 5, 'val': es13},
+                    'es16': {'name': 'es16', 'nom_val': 5, 'val': es16},
+                    'es14': {'name': 'es14', 'nom_val': 0.5, 'val': es14},
+                    'ub1000': {'name': 'ub1000', 'nom_val': 1000, 'val': ub1000}}
+    # split the corrected values into points and uncertainties
+    for y in all_plots:
+        all_plots[y]['pval'] = [z.x for z in all_plots[y]['val']]
+        all_plots[y]['uval'] = [z.u for z in all_plots[y]['val']]
 
-    AH11A1 = []
-    uAH11A1 = []
-    for x in ah11a1:
-        AH11A1.append(x.x)
-        uAH11A1.append(x.u)
-    AH11B1 = []
-    uAH11B1 = []
-    for x in ah11b1:
-        AH11B1.append(x.x)
-        uAH11B1.append(x.u)
-    AH11C1 = []
-    uAH11C1 = []
-    for x in ah11c1:
-        AH11C1.append(x.x)
-        uAH11C1.append(x.u)
-    AH11D1 = []
-    uAH11D1 = []
-    for x in ah11d1:
-        AH11D1.append(x.x)
-        uAH11D1.append(x.u)
-
-    print('GR10 =', GR10)
-    print('GR100 =', GR100)
-    print('GR1000A =', GR1000A)
-    print('GR1000B =', GR1000B)
+    # create list of plots for each axis
+    list0 = ['ah11a1', 'ah11b1', 'ah11c1', 'ah11d1']
+    list1 = ['ah11a2', 'ah11b2', 'ah11c2', 'ah11d2']
+    list2 = ['gr10', 'gr100', 'gr1000a', 'gr1000b']
+    list3 = ['ub1000', 'es13', 'es16', 'es14']
 
     barsize = 4  # points for errorbar cap
     dotsize = 4
 
-    fig, axs = plt.subplots(3, 1, layout='constrained', sharex=True)
-    axs[0].errorbar(plot_date, GR10, yerr=uGR10, capsize=barsize, label='GR10', marker='o', markersize=dotsize)
-    axs[0].errorbar(plot_date, GR100, yerr=uGR100, capsize=barsize, label = 'GR100', marker='o', markersize=dotsize)
-    axs[0].errorbar(plot_date, GR1000A, yerr=uGR1000A, capsize=barsize, label = 'GR1000A', marker='o', markersize=dotsize)
-    axs[0].errorbar(plot_date, GR1000B, yerr=uGR1000A, capsize=barsize, label = 'GR1000B', marker='o', markersize=dotsize)
-    axs[1].errorbar(plot_date, AH11A2, yerr=uAH11A2, capsize=barsize, label = 'AH11A2', marker='o', markersize=dotsize)
-    axs[1].errorbar(plot_date, AH11B2, yerr=uAH11B2, capsize=barsize, label = 'AH11B2', marker='o', markersize=dotsize)
-    axs[1].errorbar(plot_date, AH11C2, yerr=uAH11C2, capsize=barsize, label = 'AH11C2', marker='o', markersize=dotsize)
-    axs[1].errorbar(plot_date, AH11D2, yerr=uAH11D2, capsize=barsize, label = 'AH11D2', marker='o', markersize=dotsize)
-    axs[2].errorbar(plot_date, AH11A1, yerr=uAH11A1, capsize=barsize, label = 'AH11A1', marker='o', markersize=dotsize)
-    axs[2].errorbar(plot_date, AH11B1, yerr=uAH11B1, capsize=barsize, label = 'AH11B1', marker='o', markersize=dotsize)
-    axs[2].errorbar(plot_date, AH11C1, yerr=uAH11C1, capsize=barsize, label = 'AH11C1', marker='o', markersize=dotsize)
-    axs[2].errorbar(plot_date, AH11D1, yerr=uAH11D1, capsize=barsize, label = 'AH11D1', marker='o', markersize=dotsize)
-    axs[0].legend()
-    axs[1].legend()
-    axs[2].legend()
+    fig, axs = plt.subplots(2, 2, layout='constrained', sharex=True)
+    for i in range(len(list0)):
+        axs[0, 0].errorbar(plot_date, all_plots[list0[i]]['pval'], yerr=all_plots[list0[i]]['uval'], capsize=barsize, label=list0[i], marker='o', markersize=dotsize)
+    for i in range(len(list1)):
+        axs[0, 1].errorbar(plot_date, all_plots[list1[i]]['pval'], yerr=all_plots[list1[i]]['uval'], capsize=barsize, label=list1[i], marker='o', markersize=dotsize)
+    for i in range(len(list2)):
+        axs[1, 0].errorbar(plot_date, all_plots[list2[i]]['pval'], yerr=all_plots[list2[i]]['uval'], capsize=barsize, label=list2[i], marker='o', markersize=dotsize)
+    for i in range(len(list3)):
+        axs[1, 1].errorbar(plot_date, all_plots[list3[i]]['pval'], yerr=all_plots[list3[i]]['uval'], capsize=barsize, label=list3[i], marker='o', markersize=dotsize)
+    axs[0, 0].legend()
+    axs[0, 1].legend()
+    axs[1, 0].legend()
+    axs[1, 1].legend()
     plt.show()
-
-    # for x in plot_date:
-    #     print(x)
 
