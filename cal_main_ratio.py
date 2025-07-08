@@ -150,9 +150,12 @@ class PERMUTE(object):
 
 if __name__ == '__main__':
     print('Testing cal_main_ratio.py')
-    ratio_cal = PERMUTE('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\tests\\files_for_test',
-                        ['ratiocal_in_2021-09-03.csv', 'comp_leads_caps_2021-09-02.csv', 'dial_factor_out.csv',
-                         'comp_permute_2021-09-02.csv'], 'ratiocal_out_2021-09-03.csv')
+    # ratio_cal = PERMUTE('G:\\My Drive\\KJ\\PycharmProjects\\CapacitanceScale\\tests\\files_for_test',
+    #                     ['ratiocal_in_2021-09-03.csv', 'comp_leads_caps_2021-09-02.csv', 'dial_factor_out.csv',
+    #                      'comp_permute_2021-09-02.csv'], 'ratiocal_out_2021-09-03.csv')
+    ratio_cal = PERMUTE('C:\\Users\\k.jones\\OneDrive - Callaghan Innovation\\KJ\\PycharmProjects\\CapacitanceScale\\new_datastore\\June2025',
+                        ['ratiocal_in_2025-06-25.csv', 'comp_leads_caps_2021-09-02.csv', 'dial_factor_out.csv',
+                         'comp_permute_2021-09-02.csv'], 'ratiocal_out_20225-06-25.csv')
     # print(ratio_cal.balance_dict)
     raw_ratio = ratio_cal.calc_raw_ratio()
     print('raw ratio', repr(raw_ratio))

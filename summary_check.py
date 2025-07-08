@@ -241,5 +241,5 @@ class SUMMARY(object):
 
 
 if __name__ == '__main__':
-    my_summary = SUMMARY('main_2.csv')
-    my_summary.create_summary(False)
+    my_summary = SUMMARY('main_2025-07-08.csv')
+    my_summary.create_summary(True)

@@ -2,6 +2,10 @@ from openpyxl import Workbook, load_workbook
 from GTC import ureal
 from predictor import PREDICT as pre
 from matplotlib import pyplot as plt
+from datetime import datetime as dt
+import time
+
+
 # first tidying up attempt
 class EXCEL(object):
     def __init__(self, source):
@@ -215,3 +219,24 @@ if __name__ == '__main__':
     axs[1, 1].legend()
     plt.show()
 
+    # in anticipation of fitting values against decimal year using msl-nlf
+    def dec_year(date):
+        """
+        utility to convert a datetime.datetime object into a decimal year
+
+        :param date: datetime object
+        :return: decimal year
+        """
+        def since_epoch(date):  # returns seconds since epoch
+            return time.mktime(date.timetuple())
+        s = since_epoch
+        year = date.year
+        startOfThisYear = dt(year=year, month=1, day=1)
+        startOfNextYear = dt(year=year + 1, month=1, day=1)
+        yearElapsed = s(date) - s(startOfThisYear)
+        yearDuration = s(startOfNextYear) - s(startOfThisYear)
+        fraction = yearElapsed / yearDuration
+        return date.year + fraction
+
+    date_object = dt(2024, 12, 11, 14,30)
+    print(dec_year(date_object))
