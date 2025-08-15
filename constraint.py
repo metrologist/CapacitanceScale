@@ -68,6 +68,14 @@ class CONSTRAINT(object):
 
 
 if __name__ == '__main__':
+    # Input data
+
+    """
+    a plot should show the fitted line with the measurements presented with uncertainty bars
+    the fit uncertainty should have the upper and lower limits as a dotted curve
+    consider automated scaling for choosing the points at which the fitted line is calculated
+    """
+
     t = [2009.21435, 2019.54757]  # decimal year of calibrations
     c = [ureal(-4.64034, 0.04, label='BIPM'),
          ureal(-4.55899, 0.11 / 2, label='NMIA')]  # average of relative values of all
@@ -91,20 +99,20 @@ if __name__ == '__main__':
 
     # plotting the restraint
 
-    # x = np.arange(2009, 2025, 0.1)
-    # y1 = traint.line(x)
-    # y2 = []
-    # y3 = []
-    # y4 = []
-    # u = []
-    # for item in y1:
-    #     y2.append(item.x)
-    #     y3.append(item.x - item.u)
-    #     y4.append(item.x + item.u)
-    # fig = plt.figure()
-    # ax = fig.add_subplot(1, 1, 1)
-    # ax.plot(x, y2)
-    # ax.plot(x, y3, 'g', linestyle='dashed')
-    # ax.plot(x, y4, 'g', linestyle='dashed')
-    # ax.errorbar(t, traint.cal, yerr=traint.ecal, linestyle="None", fmt='o', capsize=10)
-    # plt.show()
+    x = np.arange(2009, 2025, 0.1)
+    y1 = traint.line(x)
+    y2 = []
+    y3 = []
+    y4 = []
+    u = []
+    for item in y1:
+        y2.append(item.x)
+        y3.append(item.x - item.u)
+        y4.append(item.x + item.u)
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.plot(x, y2)
+    ax.plot(x, y3, 'g', linestyle='dashed')
+    ax.plot(x, y4, 'g', linestyle='dashed')
+    ax.errorbar(t, traint.cal, yerr=traint.ecal, linestyle="None", fmt='o', capsize=10)
+    plt.show()

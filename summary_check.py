@@ -238,8 +238,9 @@ class SUMMARY(object):
                 writer = csv.writer(csvfile)
                 for x in l_c_update:
                     writer.writerow(x)
-
+        return hr_file  # the full path to the summary file (added August 2025)
 
 if __name__ == '__main__':
     my_summary = SUMMARY('main_2025-07-08.csv')
-    my_summary.create_summary(True)
+    a = my_summary.create_summary(True)
+    print(a)
