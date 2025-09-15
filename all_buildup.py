@@ -13,27 +13,31 @@ from summary_check import SUMMARY
 import os
 from analysis import ANALYSE
 
+
 class BATCH():
-    def __init__(self, main_list):
+    def __init__(self, main_list, folder):
         """
 
         :param main_list: a list of all the main_yyyy-dd_x.csv lists of input data
+        :param folder: the folder that holds this set of files
         """
         self.main_list = main_list
+        self.folder = folder
         self.cwd = os.getcwd()  # get the current working directory
 
-    def execute(self, file_info):
+    def execute(self):
         """
 
-        :param file_info: list of directories and files, also used to name the summary file
-        :return: list of summary files for processing by analysis
+        :return:
         """
-        summary_file_list = []
+
+        summary_file_list = []  # for use by analysis
         cwd = self.cwd  # get the current working directory
         for file_info in self.main_list:
+            print('this file_info = ', file_info)
             # file_info = 'main_2025-07-08.csv'  # list of directories and files, also used to name the summary file
             file_dict = {}  # hold these directories/files in this dictionary
-            cwd_file_info = os.path.join(cwd, 'run_lists', file_info)
+            cwd_file_info = os.path.join(cwd, self.folder, file_info)
             with open(cwd_file_info, newline='') as csvfile:
                 reader = csv.reader(csvfile)
                 for row in reader:
@@ -79,13 +83,14 @@ class BATCH():
             cert = g + 1j * w * c  # admittance of reference at angular frequency w
             print('reference value for buildup = ', repr(cert))
             # uses this reference value in CAPSCALE
+            list_of_monitored = ['AH1', 'AH2', 'GRin', 'GRout', 'AB1', 'Sball', 'Perm', 'Barom' ] # temperature/pressure
             buildup = CAPSCALE(os.path.join(cwd, file_dict['Working directory']),
                                [file_dict['Scale input'], file_dict['Leads and caps']], file_dict['Scale output'], cert,
-                               afactor=factora, bfactor=factorb, ratio=final_ratio)
+                               afactor=factora, bfactor=factorb, ratio=final_ratio, expected=list_of_monitored)
             all_capacitors = buildup.buildup()
             buildup.store_buildup()
 
-            summary = SUMMARY(file_info)
+            summary = SUMMARY(file_info, self.folder)
             # create the file and return its full path
             summary_path = summary.create_summary(True)  # False if no updated leads and caps csv is required
             summary_file_list.append(summary_path)
@@ -104,13 +109,31 @@ class BATCH():
 
 
 if __name__ == '__main__':
-    files = []
-    batch = BATCH(files)
+    files = [r'main_2021-08-23_a.csv',
+        r'main_2021-08-27_a.csv',
+        r'main_2021-09-06_a.csv',
+        r'main_2021-09-09.csv',
+        r'main_2021-09-10.csv',
+        r'main_2021-09-22.csv',
+        r'main_2021-10-11_b.csv',
+        r'main_2022-04-07.csv',
+        r'main_2025-07-03.csv',
+        r'main_2025-07-04.csv',
+        r'main_2025-07-07.csv',
+        r'main_2025-07-08.csv']
+    # files = [r'main_2021-08-27_a.csv', r'main_2025-07-08.csv'] # select subset
+    batch = BATCH(files, 'temp_run')
     summary_files = batch.execute()  # both executes the buildups and gives the list of summary files
     anal = ANALYSE(summary_files)
     anal.all_sumry()  # loads the data
     anal.corrected_dict()  # applies constraint of the mean of AH11 set #1
+    anal.corrected_to_std_con()
     anal.plot(['AH11A1', 'AH11B1', 'AH11C1', 'AH11D1', 'AH11A2', 'AH11B2', 'AH11C2', 'AH11D2'], 'AH11 set')
     anal.plot(['ES14', 'ES13', 'ES16', 'GR10', 'GR100', 'GR1000A', 'GR1000B', 'ES13ES16'], 'GR and S ball set')
     out_block = anal.out_block()  # prepares csv-friendly lists
     anal.file_block('test_analysis.csv', out_block)  # writes to csv file
+    anal.fully_corrected_dict()  # while working on full corrections
+    # anal.add_influence()  # while working on full corrections
+    # anal.fully_corrected_dict()  # while working on full corrections
+    print(anal.cond_dict)
+

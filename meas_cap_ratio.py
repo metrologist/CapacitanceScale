@@ -11,6 +11,7 @@ from components import CAPACITOR, LEAD, CONNECT, PARALLEL
 from GTC import ucomplex, ureal
 from GTC.reporting import budget  # just for checks
 from json import dumps, loads
+from conditions import CONDITIONS
 
 
 class CAPSCALE(object):
@@ -23,8 +24,13 @@ class CAPSCALE(object):
         :param input_files: a list of file names for dial factors, 10:1 ratio, leads, capacitors and balance readings
         :param output_file_name: csv file for calculated values of all the capacitors
         :param ref_value is the up to date value of AH11C1 (derived from external calibration history)
-        :param kwargs: allows values of 'afactor', 'bfactor' and 'ratio' to be entered directly rather than extracted from the input files. This is used when the whole buildup calculation is done in a single run in main.py
+        :param kwargs: allows values of 'afactor', 'bfactor' and 'ratio' to be entered directly rather than extracted
+        from the input files. This is used when the whole buildup calculation is done in a single run in main.py.
+        The expected list of measured conditions can also be added.
         """
+        for arg in kwargs.keys():
+            if arg == 'expected':
+                self.expected = kwargs[arg]  # e.g. ['AH1', 'AH2', 'GRin', 'GRout', 'AB1', 'Sball', 'Perm', 'Barom' ]
         self.ref_cap = ref_value
         self.output_name = output_file_name  # optional store in a csv file
         self.store = GTCSTORE()
@@ -37,6 +43,7 @@ class CAPSCALE(object):
             reader = csv.reader(csvfile)
             counter = 0
             self.balance_dict = {}
+            cond_block = []  # will create a block of the measured conditions
             ratios = ['r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15']
             for row in reader:
                 counter += 1
@@ -54,6 +61,10 @@ class CAPSCALE(object):
                     self.factorb = self.store.json_to_ucomplex(row[1])
                 elif row[0] == 'main_ratio':
                     self.main_ratio = self.store.json_to_ucomplex(row[1])
+                elif row[0] in self.expected:
+                    cond_block.append(row)
+                elif row[0] == 'Conditions':
+                    print('Environmental conditions found.')  # the 'Conditions' header is for analysis.py to find
                 else:
                     print('This row does not match. Wrong csv file? ', row)
         # next load in all the lead and capacitor objects
@@ -64,6 +75,7 @@ class CAPSCALE(object):
         lead_list = ['hv1', 'hv2', 'lv1', 'lv2', 'xfrm', 'hv1_xfrm', 'hv2_xfrm', 'no_lead']
         self.caps = {}
         self.leads = {}
+
         with open(data_in, newline='') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
@@ -75,6 +87,7 @@ class CAPSCALE(object):
                     item = loads(row[1])
                     item = self.storecomp.dict_to_lead(item)
                     self.leads[row[0]] = item
+
         # allows key values to override those supplied from the input csv
         for arg in kwargs.keys():
             if arg == 'afactor':
@@ -83,6 +96,12 @@ class CAPSCALE(object):
                 self.factorb = kwargs[arg]
             if arg == 'ratio':
                 self.main_ratio = kwargs[arg]
+
+        # create JSON version of condition dictionary
+        cond = CONDITIONS(self.expected)
+        cond.build_dict_from_block(cond_block)
+        self.conditions = cond.cond_to_json()
+        print('conditions =', self.conditions)
 
     def cap_ratio(self, balance, cap, inverse):
         """

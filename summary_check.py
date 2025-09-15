@@ -11,23 +11,24 @@ import os
 from json import loads
 from archive import COMPONENTSTORE
 from datetime import datetime
-from constraint import CONSTRAINT  # intend to catch the ratio date in line 134 of this code to calculate the constraint
-from dateutil import parser
-from GTC import ureal
+# from constraint import CONSTRAINT  # intend to catch the ratio date in line 134 of this code to calculate the constraint
+# from dateutil import parser
+# from GTC import ureal
 
 
 class SUMMARY(object):
-    def __init__(self, file_list):
+    def __init__(self, file_list, folder):
         """
         SUMMARY creates a single csv file that contains all the input data and calculated results in a human readable
         format. This is a convenience for checking purposes noting that the full results are stored in csv files as
         json strings holding uncertain numbers.
 
         :param file_list: the list of input and output csv files identical to that used for the main calculation
+        :param folder: the folder holding the run lists
 
         """
         self.file_dict = {}  # hold these directories/files in this dictionary
-        with open(os.path.join(os.getcwd(), 'run_lists', file_list), newline='') as csvfile:
+        with open(os.path.join(os.getcwd(), folder, file_list), newline='') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
                 self.file_dict[row[0]] = row[1]
@@ -49,6 +50,7 @@ class SUMMARY(object):
 
         store = COMPONENTSTORE()
         hr_file = os.path.join(self.file_dict['Working directory'], 'summary_' + self.file_list)
+        print('hr file =', hr_file)
         hr_output = []
         # Files used to make this summary
         hr_output.append(['File information for this summary'])
@@ -203,22 +205,22 @@ class SUMMARY(object):
                         for_summary = [row[0], bb.relu, bb.w, bb.y.imag.x / angf * 1e12, bb.y.real.x * 1e9, bb.z.real.x,
                                        bb.z.imag.x / angf * 1e6]
                     hr_output.append(for_summary)
-        hr_output.append([])  # just to space between outputs
-        hr_output.append(['Constraint value when capacitors were measured', 'mean of all four AH1 set'])
-        t = [2009.21435, 2019.54757]  # decimal year of calibrations
-        c = [ureal(-4.64034, 0.04, label='BIPM'),
-             ureal(-4.55899, 0.11 / 2, label='NMIA')]  # average of relative values of all
-        traint = CONSTRAINT(t, c)  # set the CONSTRAINT object
-        constraint_value = traint.predicted(self.capcal_date)
-        hr_output.append(['ppm', 'u ppm'])
-        hr_output.append([constraint_value.x, constraint_value.u])
-        val_sum = 0
-        for x in refs_rel_val:
-            val_sum = val_sum + refs_rel_val[x]
-        ref_mean = val_sum / len(refs_rel_val)
-        print('ref_mean =', ref_mean)
-        hr_output.append(['ref_mean =', ref_mean])
-        hr_output.append(['correction =', constraint_value.x - ref_mean])
+        # hr_output.append([])  # just to space between outputs
+        # hr_output.append(['Constraint value when capacitors were measured', 'mean of all four AH1 set'])
+        # t = [2009.21435, 2019.54757]  # decimal year of calibrations
+        # c = [ureal(-4.64034, 0.04, label='BIPM'),
+        #      ureal(-4.55899, 0.11 / 2, label='NMIA')]  # average of relative values of all
+        # traint = CONSTRAINT(t, c)  # set the CONSTRAINT object
+        # constraint_value = traint.predicted(self.capcal_date)
+        # hr_output.append(['ppm', 'u ppm'])
+        # hr_output.append([constraint_value.x, constraint_value.u])
+        # val_sum = 0
+        # for x in refs_rel_val:
+        #     val_sum = val_sum + refs_rel_val[x]
+        # ref_mean = val_sum / len(refs_rel_val)
+        # print('ref_mean =', ref_mean)
+        # hr_output.append(['ref_mean =', ref_mean])
+        # hr_output.append(['correction =', constraint_value.x - ref_mean])
 
         with open(hr_file, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)

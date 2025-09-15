@@ -1,7 +1,7 @@
 File information for this summary
-Summary produced,2021-09-07 13:55:16.239157
-List of files held in,G:\My Drive\KJ\PycharmProjects\CapacitanceScale\main_2021-08-23_a.csv
-Working directory,G:\My Drive\KJ\PycharmProjects\CapacitanceScale\new_datastore\nov2019
+Summary produced,2025-08-18 15:51:26.362475
+List of files held in,C:\Users\k.jones\OneDrive - Callaghan Innovation\KJ\PycharmProjects\CapacitanceScale\main_2021-08-23_a.csv
+Working directory,new_datastore\nov2019
 Dial input,dialcal_in_2019-10-16_a.csv
 Dial output,dialcal_out_2019-10-16_a.csv
 Permutable,comp_permute_2019-11-15.csv
@@ -151,3 +151,9 @@ gr100,99.99999999999999,1e-11,0.0,1e-12,483.7199999999999,0.7,0.0,0.0,10000.0
 gr1000a,1000.0000000000001,1e-11,0.0,1e-12,1386.0,0.0,0.0,0.0,10000.0
 gr1000b,1000.0000000000001,1e-11,0.0,1e-12,1386.0,0.0,0.0,0.0,10000.0
 es13_16,10.0,1e-11,0.0,1e-12,494.8,2.0799999999999996,0.0,0.0,10000.0
+
+Constraint value when capacitors were measured,mean of all four AH1 set
+ppm,u ppm
+-4.556441909954442,0.05673657613821858
+ref_mean =,-4.55346794545064
+correction =,-0.0029739645038020512
