@@ -107,7 +107,6 @@ class BATCH():
         return summary_file_list
 
 
-
 if __name__ == '__main__':
     files = [r'main_2021-08-23_a.csv',
         r'main_2021-08-27_a.csv',
@@ -132,8 +131,4 @@ if __name__ == '__main__':
     anal.plot(['ES14', 'ES13', 'ES16', 'GR10', 'GR100', 'GR1000A', 'GR1000B', 'ES13ES16'], 'GR and S ball set')
     out_block = anal.out_block()  # prepares csv-friendly lists
     anal.file_block('test_analysis.csv', out_block)  # writes to csv file
-    anal.fully_corrected_dict()  # while working on full corrections
-    # anal.add_influence()  # while working on full corrections
-    # anal.fully_corrected_dict()  # while working on full corrections
-    print(anal.cond_dict)
-
+    anal.store_dicts()

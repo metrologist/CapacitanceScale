@@ -5,6 +5,7 @@ from constrained import REFERENCE
 from matplotlib import pyplot as plt
 from conditions import CONDITIONS
 from GTC import ureal
+from json import dumps
 
 class ANALYSE():
     def __init__(self, file_list):
@@ -319,7 +320,6 @@ class ANALYSE():
             full_corrected = []  # this will be the list of values (as tuples) corrected to standard conditions
             i = 0
             for val in corrected:
-                print('val instance =', val)
                 cap_val = ureal(float(val[1]), float(val[2]))
                 if 'tempco' in y:  # does it have a temperature coefficient
                     cap_val = self.corrected_to_std(cap_val, temp_list[i], y['stdtemp'], y['tempco'])  # cap_val is modified
@@ -327,7 +327,7 @@ class ANALYSE():
                     cap_val = self.corrected_to_std(cap_val, pressure[i], y['stdpres'], y['pc'])  # cap_val is modified again
                 i += 1
                 full_corrected.append((val[0], cap_val.x, cap_val.u))
-            print('full_corrected =', full_corrected)
+            # print('full_corrected =', full_corrected)
             y['std_ppm'] = full_corrected
 
     def fully_corrected_dict(self):
@@ -421,6 +421,32 @@ class ANALYSE():
         plt.savefig(title + '.jpg')
         plt.show()
 
+    def store_dicts(self):
+        """
+
+        Stores the capacitor dictionaries for use by cap_fit.py, converting temperature and pressure coefficients
+        from simple ureal to a tuple (x, u).
+        :return:
+        """
+        block = []  # for assembling the dictionaries
+        for x in self.dicts:
+            this_dict = self.all_dict[x]
+            new_dict = {}  # replicate this_dict to cope with changing simple ureal to tuple
+            for y in this_dict:
+                if y == 'tempco' or y == 'pc':
+                    # new_dict[y] = gs.ureal_to_json(this_dict[y])
+                    new_dict[y] = (this_dict[y].x, this_dict[y].u)
+                else:
+                    new_dict[y] = this_dict[y]
+            out_json = dumps(new_dict)
+            block.append([out_json])
+        with open('analysis_dict.csv', 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            for x in block:
+                writer.writerow(x)
+
+
+
 if __name__ == '__main__':
     # anal = ANALYSE([
     #     r'new_datastore\nov2019\summary_main_2021-08-23_a.csv',
@@ -447,7 +473,7 @@ if __name__ == '__main__':
         r'old_datastore\June2025\summary_main_2025-07-04.csv',
         r'old_datastore\June2025\summary_main_2025-07-07.csv',
         r'old_datastore\June2025\summary_main_2025-07-08.csv'
-    ])
+        ])
     anal.all_sumry()  # loads the data
     anal.corrected_dict()  # applies constraint of the mean of AH11 set #1
     anal.plot(['AH11A1', 'AH11B1', 'AH11C1', 'AH11D1', 'AH11A2', 'AH11B2', 'AH11C2', 'AH11D2'], 'AH11 set')
