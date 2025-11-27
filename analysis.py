@@ -6,6 +6,8 @@ from matplotlib import pyplot as plt
 from conditions import CONDITIONS
 from GTC import ureal
 from json import dumps
+import pickle
+import mpld3
 
 class ANALYSE():
     def __init__(self, file_list):
@@ -419,6 +421,11 @@ class ANALYSE():
         plt.tight_layout()
         plt.savefig(title + '.pdf')
         plt.savefig(title + '.jpg')
+        with open(title + '.pkl', 'wb') as f:  # use view.py to interact later
+            pickle.dump(fig, f)
+        # html_fig = mpld3.fig_to_html(fig)
+        # with open(title +'.html', "w") as f:
+        #     f.write(html_fig)
         plt.show()
 
     def store_dicts(self):

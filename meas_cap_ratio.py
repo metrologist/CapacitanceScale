@@ -38,6 +38,7 @@ class CAPSCALE(object):
         self.data_folder = Path(file_path)
         data_in = self.data_folder / input_files[0]
         self.data_out = self.data_folder / output_file_name
+        self.cap_inject = False  # default that 0.5 pF balance is by voltage injection through 100:1 transformer
         self.r = 1e-4  # ratio with 100:1 injection transformer
         with open(data_in, newline='') as csvfile:  # format must be correct
             reader = csv.reader(csvfile)
@@ -51,6 +52,10 @@ class CAPSCALE(object):
                     self.date_string = row[1]
                 elif row[0] == 'Reference':
                     self.reference_string = row[1]
+                    if len(row)==3: # configuration of 0.5 pF bridge
+                        if row[2]=='cap inject':
+                            print('cap inject !!!')
+                            self.cap_inject = True  # injection through 0.5 pF capacitor
                 elif row[0] == 'w':  # radians per second
                     self.w = float(row[1])
                 elif row[0] in ratios:  # each build up ratio has an (alpha, beta) tuple
@@ -142,7 +147,7 @@ class CAPSCALE(object):
         Calculates the value of the two 5 pF capacitors (ES13 and ES16) from knowing the value of the two in parallel
         and their difference in ratio when individually balanced against the 0.5 pF (ES14). The 5 pF capacitors connect
         directly to the HV side when measured against a 100 pF capacitor, but are on the LV side with the injection
-        transformer (xfrm LEAD) when being compared to the 0.5 pF capacitor. E005.003 does not have these formulae.
+        transformer (xfrm LEAD) when being compared to the 0.5 pF capacitor. The Addendum to E005.003 has these formulae.
 
         :param bal1: ratio ES14/ES13
         :param bal2: ratio ES14/ES16
@@ -159,6 +164,42 @@ class CAPSCALE(object):
         c13 = ratio2 / (ratio1 + ratio2) * (sum_val + ratio1 / ratio2 * lead_13 - lead_16)
         c16 = ratio1 / (ratio1 + ratio2) * (sum_val + ratio2 / ratio1 * lead_16 - lead_13)
         c14 = (ratio1 * ratio2) / (ratio1 + ratio2) * (sum_val + ratio1 / ratio2 * lead_13 - lead_16) - ratio1 * lead_13
+        return c13, c16, c14
+
+    def sum_ratio3(self, bal1, bal2, sum_val, cap1, cap2, com_lead):
+        """
+        Calculates the value of the two 5 pF capacitors (ES13 and ES16) from knowing the value of the two in parallel
+        and their difference in ratio when individually balanced against the 0.5 pF (ES14). The 5 pF capacitors connect
+        directly to the HV side when measured against a 100 pF capacitor, but are on the LV side when being compared to
+        the 0.5 pF capacitor. The bal1 and bal2 measurements are made with the 'unused' 5 pF as the injection capacitor
+        connected to the 10:1 transformer (similar to the permutable bridge).
+        E005.003 does not have these formulae.
+
+        :param bal1: ratio ES14/ES13
+        :param bal2: ratio ES14/ES16
+        :param sum_val: the value of the two capacitors in parallel
+        :param cap1: one of the 5 pF CAPACITOR object ES13
+        :param cap2: the other of the 5 pF CAPACITOR objects ES16
+        :param com_lead: the additional common lead when the two 5 pF caps are paralleled on the low voltage side
+        :return: value of ES13, ES16 and ES14
+        """
+        print('bal1 =', bal1)
+        print('bal2 =', bal2)
+        r = -0.001  # for the 10:1 transformer, replacing self.r
+        admit_ES13 = cap1.best_value  # admittance at 10000 rad/s
+        admit_ES16 = cap2.best_value
+        rbal1 = r * (bal1[0] * self.factora + 1j * bal1[1] * self.factorb)
+        rbal2 = r * (bal2[0] * self.factora + 1j * bal2[1] * self.factorb)
+        A = (1 + rbal2 * admit_ES13 / admit_ES16) / (1 + rbal1 * admit_ES16 / admit_ES13)
+        c13 = sum_val * (A / (1 + A))
+        c16 = sum_val / (1 + A)
+        c14 = c16 / self.main_ratio * (1 + rbal2 * admit_ES13 / admit_ES16)
+        # c14_ = c13 / self.main_ratio * (1 + rbal1 * admit_ES16 / admit_ES13)  # must be same as above in value
+        # w = 1e4  # just for the debug print below
+        # print('c13 =', (c13.imag / w * 1e12/5-1)*1e6)
+        # print('c16 =', (c16.imag / w * 1e12/5-1)*1e6)
+        # print('c14=', (c14.imag / w * 1e12/0.5-1)*1e6)
+        # print('c14_=', (c14_.imag / w * 1e12/0.5-1)*1e6)
         return c13, c16, c14
 
     def buildup(self):
@@ -238,7 +279,12 @@ class CAPSCALE(object):
         r1 = self.balance_dict['r1']
         r2 = self.balance_dict['r2']
         # c13, c16, c14 = self.sum_ratio(r1, r2, e1316)
-        c13_2, c16_2, c14_2 = self.sum_ratio2(r1, r2, e1316, self.caps['es13'], self.caps['es16'], self.leads['xfrm'])
+        if self.cap_inject:
+            print('cap_inject')
+            c13_2, c16_2, c14_2 = self.sum_ratio3(r1, r2, e1316, self.caps['es13'], self.caps['es16'], self.leads['xfrm'])
+        else:
+            print('volt_inject')
+            c13_2, c16_2, c14_2 = self.sum_ratio2(r1, r2, e1316, self.caps['es13'], self.caps['es16'], self.leads['xfrm'])
         # print('c13', c13)
         # print('c13_2', c13_2)
         # print('c14', c14)
@@ -248,6 +294,11 @@ class CAPSCALE(object):
         self.caps['es13'].set_best_value(c13_2)
         self.caps['es16'].set_best_value(c16_2)
         self.caps['es14'].set_best_value(c14_2)
+        # *******************************************
+        # testing the alternative sum_ratio with the 5 pF injection capacitor
+        # print('hello')
+        # self.sum_ratio3(r1, r2, e1316, self.caps['es13'], self.caps['es16'], self.leads['xfrm'])  # for test
+        # *******************************************
         return self.caps
 
     def store_buildup(self):
@@ -281,9 +332,9 @@ if __name__ == '__main__':
     final_ratio = ucomplex(10.00001763921027 + 1j * -0.0001684930432066416, (1e-10, 1e-10), df=100, label="main_ratio")
     factora = ucomplex(1.0003093210681406 + 1j * 0.0007497042903003306, (1e-10, 1e-10), df=100, label='factora')
     factorb = ucomplex(1.0001942917392947 + 1j * -0.00023893092658472306, (1e-10, 1e-10), df=100, label='factorb')
-    buildup = CAPSCALE(r'G:\My Drive\KJ\PycharmProjects\CapacitanceScale\datastore_improv',
-                       [r'in3.csv', r'leads_and_caps.csv'], r'out3.csv', cert,
-                       afactor=factora, bfactor=factorb, ratio=final_ratio)
+    buildup = CAPSCALE(r'C:\Users\k.jones\OneDrive - Callaghan Innovation\KJ\PycharmProjects\CapacitanceScale\tests\files_for_test',
+                       [r'in4.csv', r'leads_and_caps.csv'], r'out4.csv', cert,
+                       afactor=factora, bfactor=factorb, ratio=final_ratio, expected=[])
     print('reference from CAPSCALE', buildup.ref_cap)
     ah11c1 = buildup.caps['ah11c1']
     ah11c1.set_best_value(cert)  # force the value to cert (but doesn't change in leads_and_caps.csv
@@ -300,3 +351,5 @@ if __name__ == '__main__':
     a1 = buildup.cap_ratio(r4, ah11c1.best_value - ah11c1.lead_correction(hv2_xfrm, lv2), True)
     buildup.caps['ah11a1'].set_best_value(a1 + buildup.caps['ah11a1'].lead_correction(hv1, lv1))  # value with no leads
     print('ah11a1', buildup.caps['ah11a1'].best_value.imag.x)
+
+    buildup.buildup()

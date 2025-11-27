@@ -119,7 +119,11 @@ if __name__ == '__main__':
         r'main_2025-07-03.csv',
         r'main_2025-07-04.csv',
         r'main_2025-07-07.csv',
-        r'main_2025-07-08.csv']
+        r'new_main_2025-07-08.csv',
+        r'main_2025-10-23.csv',
+        r'main_2025-10-28.csv',
+        r'main_2025-11-06.csv',
+        r'main_2025-11-21.csv']  # new is the trial with more recent dial and ratio calibration
     # files = [r'main_2021-08-27_a.csv', r'main_2025-07-08.csv'] # select subset
     batch = BATCH(files, 'temp_run')
     summary_files = batch.execute()  # both executes the buildups and gives the list of summary files

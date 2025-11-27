@@ -16,7 +16,7 @@ class PERMUTE(object):
         Takes the balance values of a Permutable Capacitor run and returns an uncertain complex value for the main
         10:1 ratio.
 
-        :param file_path: working directlory
+        :param file_path: working directory
         :param input_file_names: list of csv files, order sensitive, [balances s1 ... s12, leads and caps, cal factors for the main dial (factora, factorb), model compenents as ucomplex impedance/admittance and values in pF of each of the 11 capacitors]
         :param output_file_name:
         :param kwargs:  'afactor' and 'bfactor to overide any csv file input values for factora and factorb (redundant?)

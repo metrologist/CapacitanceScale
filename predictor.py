@@ -50,7 +50,7 @@ if __name__ == '__main__':
     check_dates = ['7-Apr-2022', '11-Apr-2022','30-May-2022', '31-May-2022', '2-Jun-2022', '20-Jun-2022','21-Jun-2022',
                    '4-Jul-2022', '11-Jul-2022', '5-Jul-2022', '1-Aug-2022', '23-Sep-2023', '25-Oct-2022', '11-Nov-22',
                    '16-Jan-2023', '28-Mar-2023', '8-May-2023', '16-May-2023', '17-May-2023', '23-May-2023', '29-Sep-2023',
-                   '2-Oct-2023', '18-Dec-2023', '5-Aug-2025']
+                   '2-Oct-2023', '18-Dec-2023', '5-Aug-2025', '28-Oct-2025']
     # check_dates = ['5-Aug-2025']
     for x in check_dates:
         # print(pre.d.predicted(x))
@@ -59,4 +59,4 @@ if __name__ == '__main__':
         b = pre.b.predicted(x)
         c = pre.c.predicted(x)
         d = pre.d.predicted(x)
-        print(x,'average =', (a + b +c +d) / 4)
+        print(x,'average =', (a + b +c +d) / 4, a, b, c, d)

@@ -19,21 +19,18 @@ from dict_test import FUNCDICTL
 
 
 class PRIMCAL():
-    def __init__(self, cap, coefficients, std_temperature, equation, label, nompF):
+    def __init__(self, cap, coefficients, std_temperature, equation, label, nompF, weight=False):
         """
-        Uses history of primary calibration results to establish time dependent behaviour of a capacitor using the
-        equation provided. Each individual capacitor is a separate instance of PRIMCAL.
-
-        Likely format for cap
-        [Date, (value in pF, standard uncertainty in pF, degrees of freedom, chassis temperature)
-        [(''Mar 23 2025'',(9.999951, 0.00000023, 5, 28.2)), ('Jun 1 2025',(9.999951, 0.00000024, 5, 28.54)),...]
-        The date string must be compatible with dateutil parser.parse.
 
         :param cap: list of tuples in the form of (date, value, standard uncertainty)
         :param coefficients: for now just a temperature coefficient in ppm/degree
         :param std_temperature: arbitrary common chassis temperature for all the measurements
-        :param equation: !!!FUNCDICT!!!a string compatible with msl.nlf, such as 'a1 + a2*x + a3*x^2', using Delphi conventions
+        :param equation: FUNCDICT a string compatible with msl.nlf, such as 'a1 + a2*x + a3*x^2', using Delphi conventions
+        :param label: name of capacitor
+        :param weight: boolean True if fit is to be weighted by the uncertainty
+        :param nompF: nominal value in pF
         """
+
         self.label = label
         self.nompF = nompF
         #  convert cap into lists
@@ -54,7 +51,7 @@ class PRIMCAL():
         self.gtcfit = 'NA'  # only available after fitting
         self.chisq = 'NA'  # only available after fitting
         try:  # consider how to report poor/failed fits
-            self.gtcfit, self.chisq = self.fitting()
+            self.gtcfit, self.chisq = self.fitting(weight=weight)  # will default to False if not set for the class
         except:
             print('fitting process failed')
         self.pltfn = []  # the fit line
@@ -106,17 +103,27 @@ class PRIMCAL():
             time_axis.append(self.decimal_date(x))  # fit against decimal date
         return time_axis
 
-    def fitting(self):
+    def fitting(self, weight=False):
         """
 
-        Least-squares fit of the capacitance values to the selected function
-        :return:
+        Least-squares fit of the capacitance values to the selected function that defaults to unweighted unless
+        it is set to True.
+        :param weight: True if weighting is used
+        :return: the correlated gtc fit and chisq
         """
+
         cap_values = []
+        cap_u = []  # only used if weight is True
         for c in self.cap_corrected:
             cap_values.append(c.x)  # not using the uncertainty information
-        # result = self.model.fit(self.time_axis, cap_values, params=[0, 0])  # how do I automatically know the number of parameters?
-        result = self.model.fit(self.time_axis, cap_values, params=self.equation['param'])  # FUNCDICT version
+            if weight:
+                cap_u.append(c.u)
+        if weight:
+            self.model.options(weighted=True)
+            result = self.model.fit(self.time_axis, cap_values, params=self.equation['param'], uy=cap_u)
+        else:
+            self.model.options(weighted=False)  # as this is in self it pays to be clear it is either True or False
+            result = self.model.fit(self.time_axis, cap_values, params=self.equation['param'])
         gtc_real_fit = result.to_ureal()  # fit coefficients as gtc ureals
         chisq = result.chisq
         self.gtcfit = gtc_real_fit
@@ -175,7 +182,7 @@ if __name__ == '__main__':
 
     cap1 = [('Mar 19 2009', (9.999950922, 0.000000400, 50, 31.4)),
             ('Jul 20 2019', (9.9999500, 0.000000550, 50, 27.0)),
-            ('Jul 31 2025', (9.9999513, 0.00000070, 50, 27.75))
+            ('Jul 31 2025', (9.9999513, 0.00000070, 50, 27.75))  # weight most recent point?
             ]
 
     coefficient1 = 0.003086584
@@ -211,12 +218,21 @@ if __name__ == '__main__':
     equation4 = fn_set.f_dict['func1']  # FUNCDICT version
 
     # Create instances of PRIMCAL
-    ah11a1 = PRIMCAL(cap1, coefficient1, std_temperature, equation1, '#1 AH11A 10 pF', 10)
-    ah11b1 = PRIMCAL(cap2, coefficient2, std_temperature, equation2, '#1 AH11B 10 pF', 10)
-    ah11c1 = PRIMCAL(cap3, coefficient3, std_temperature, equation3, '#1 AH11C 100 pF', 100)
-    ah11d1 = PRIMCAL(cap1, coefficient4, std_temperature, equation4, '#1 AH11D 100 pF', 100)
-
+    # Can compare the weighted and unweigted fits
+    # Altering the input uncertainties could be justified, e.g. stronger weighting on the most recent value
+    ah11a1 = PRIMCAL(cap1, coefficient1, std_temperature, equation1, '#1 AH11A 10 pF', 10, weight=True)
     ah11a1.plotcap()
+    ah11a1 = PRIMCAL(cap1, coefficient1, std_temperature, equation1, '#1 AH11A 10 pF', 10)
+    ah11a1.plotcap()
+    ah11b1 = PRIMCAL(cap2, coefficient2, std_temperature, equation2, '#1 AH11B 10 pF', 10, weight=True)
     ah11b1.plotcap()
+    ah11b1 = PRIMCAL(cap2, coefficient2, std_temperature, equation2, '#1 AH11B 10 pF', 10)
+    ah11b1.plotcap()
+    ah11c1 = PRIMCAL(cap3, coefficient3, std_temperature, equation3, '#1 AH11C 100 pF', 100, weight=True)
     ah11c1.plotcap()
+    ah11c1 = PRIMCAL(cap3, coefficient3, std_temperature, equation3, '#1 AH11C 100 pF', 100)
+    ah11c1.plotcap()
+    ah11d1 = PRIMCAL(cap1, coefficient4, std_temperature, equation4, '#1 AH11D 100 pF', 100, weight=True)
+    ah11d1.plotcap()
+    ah11d1 = PRIMCAL(cap1, coefficient4, std_temperature, equation4, '#1 AH11D 100 pF', 100)
     ah11d1.plotcap()
