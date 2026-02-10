@@ -2,7 +2,7 @@
 import csv
 from json import loads
 from msl.nlf import Model
-from dict_test import FUNCDICTL
+from funcdictl import FUNCDICTL
 import numpy as np
 from matplotlib import pyplot as plt
 import pickle

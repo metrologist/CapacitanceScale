@@ -1,7 +1,7 @@
 # analysis.py picks up a set of summary_main.csv files and normalises all capacitor values to a chosen constraint
 # this replaces the need to copy and paste from csv into xlsx for generating lists and graphs
 import csv
-from constrained import REFERENCE
+from reference import REFERENCE
 from matplotlib import pyplot as plt
 from conditions import CONDITIONS
 from GTC import ureal
@@ -19,22 +19,22 @@ class ANALYSE():
         self.file_list = file_list
 
         # 'vals' is list of (date, val pF, u pF, val S, uS) tuples
-        self.ah11a1 = {'name': 'AH11A1', 'nompF': 10, 'vals': [], 'ppm': [], 'cppm': []}
-        self.ah11b1 = {'name': 'AH11B1', 'nompF': 10, 'vals': [], 'ppm': [], 'cppm': []}
-        self.ah11c1 = {'name': 'AH11C1', 'nompF': 100, 'vals': [], 'ppm': [], 'cppm': []}
-        self.ah11d1 = {'name': 'AH11D1', 'nompF': 100, 'vals': [], 'ppm': [], 'cppm': []}
-        self.ah11a2 = {'name': 'AH11A2', 'nompF': 10, 'vals': [], 'ppm': [], 'cppm': []}
-        self.ah11b2 = {'name': 'AH11B2', 'nompF': 10, 'vals': [], 'ppm': [], 'cppm': []}
-        self.ah11c2 = {'name': 'AH11C2', 'nompF': 100, 'vals': [], 'ppm': [], 'cppm': []}
-        self.ah11d2 = {'name': 'AH11D2', 'nompF': 100, 'vals': [], 'ppm': [], 'cppm': []}
-        self.es14 = {'name': 'ES14', 'nompF': 0.5, 'vals': [], 'ppm': [], 'cppm': []}
-        self.es13 = {'name': 'ES13', 'nompF': 5, 'vals': [], 'ppm': [], 'cppm':[]}
-        self.es16 = {'name': 'ES16', 'nompF': 5, 'vals': [], 'ppm': [], 'cppm':[]}
-        self.gr10 = {'name': 'GR10', 'nompF': 10, 'vals': [], 'ppm': [], 'cppm':[]}
-        self.gr100 = {'name': 'GR100', 'nompF': 100, 'vals': [], 'ppm': [], 'cppm':[]}
-        self.gr1000a = {'name': 'GR1000A', 'nompF': 1000, 'vals': [], 'ppm': [], 'cppm':[]}
-        self.gr1000b = {'name': 'GR1000B', 'nompF': 1000, 'vals': [], 'ppm': [], 'cppm':[]}
-        self.es13es16 = {'name': 'ES13ES16', 'nompF': 10, 'vals': [], 'ppm': [], 'cppm':[]}
+        self.ah11a1 = {'name': 'AH11A1', 'nompF': 10, 'vals': [], 'ppm': [], 'cppm': [], 'conduct': []}
+        self.ah11b1 = {'name': 'AH11B1', 'nompF': 10, 'vals': [], 'ppm': [], 'cppm': [], 'conduct': []}
+        self.ah11c1 = {'name': 'AH11C1', 'nompF': 100, 'vals': [], 'ppm': [], 'cppm': [], 'conduct': []}
+        self.ah11d1 = {'name': 'AH11D1', 'nompF': 100, 'vals': [], 'ppm': [], 'cppm': [], 'conduct': []}
+        self.ah11a2 = {'name': 'AH11A2', 'nompF': 10, 'vals': [], 'ppm': [], 'cppm': [], 'conduct': []}
+        self.ah11b2 = {'name': 'AH11B2', 'nompF': 10, 'vals': [], 'ppm': [], 'cppm': [], 'conduct': []}
+        self.ah11c2 = {'name': 'AH11C2', 'nompF': 100, 'vals': [], 'ppm': [], 'cppm': [], 'conduct': []}
+        self.ah11d2 = {'name': 'AH11D2', 'nompF': 100, 'vals': [], 'ppm': [], 'cppm': [], 'conduct': []}
+        self.es14 = {'name': 'ES14', 'nompF': 0.5, 'vals': [], 'ppm': [], 'cppm': [], 'conduct': []}
+        self.es13 = {'name': 'ES13', 'nompF': 5, 'vals': [], 'ppm': [], 'cppm':[], 'conduct': []}
+        self.es16 = {'name': 'ES16', 'nompF': 5, 'vals': [], 'ppm': [], 'cppm':[], 'conduct': []}
+        self.gr10 = {'name': 'GR10', 'nompF': 10, 'vals': [], 'ppm': [], 'cppm':[], 'conduct': []}
+        self.gr100 = {'name': 'GR100', 'nompF': 100, 'vals': [], 'ppm': [], 'cppm':[], 'conduct': []}
+        self.gr1000a = {'name': 'GR1000A', 'nompF': 1000, 'vals': [], 'ppm': [], 'cppm':[], 'conduct': []}
+        self.gr1000b = {'name': 'GR1000B', 'nompF': 1000, 'vals': [], 'ppm': [], 'cppm':[], 'conduct': []}
+        self.es13es16 = {'name': 'ES13ES16', 'nompF': 10, 'vals': [], 'ppm': [], 'cppm':[], 'conduct': []}
         self.dicts = ['AH11A1', 'AH11B1', 'AH11C1', 'AH11D1', 'AH11A2', 'AH11B2', 'AH11C2', 'AH11D2',
                  'ES14', 'ES13', 'ES16', 'GR10', 'GR100', 'GR1000A', 'GR1000B', 'ES13ES16']
         self.all_dict = {
@@ -170,6 +170,7 @@ class ANALYSE():
             bb = float(x[2]) / float(x[1]) * 1e6  # cap u in ppm
             ppm_tp = (date, aa, bb)
             x_d['ppm'].append(ppm_tp)
+            x_d['conduct'].append((float(x[3]), float(x[4])))  # conductance added directly as nS
 
         expected = ['AH1', 'AH2', 'GRin', 'GRout', 'AB1', 'Sball', 'Perm', 'Barom']
         cd = CONDITIONS(expected)  # an instance of CONDITIONS
@@ -374,17 +375,27 @@ class ANALYSE():
         selected_ppm = 'std_ppm'  # for fully corrected to standard conditions
         output = []
         head_row = ['Date', 'AH11A1', 'AH11B1', 'AH11C1', 'AH11D1','AH11A2', 'AH11B2', 'AH11C2', 'AH11D2',
-            'ES14', 'ES13', 'ES16', 'GR10', 'GR100', 'GR1000A', 'GR1000B', 'ES13ES16', 'uAH11A1', u'AH11B1', u'AH11C1',
+            'ES14', 'ES13', 'ES16', 'GR10', 'GR100', 'GR1000A', 'GR1000B', 'ES13ES16', 'uAH11A1', 'uAH11B1', 'uAH11C1',
             'uAH11D1','uAH11A2', 'uAH11B2', 'uAH11C2', 'uAH11D2', 'uES14', 'uES13', 'uES16', 'uGR10', 'uGR100',
-            'uGR1000A', 'uGR1000B', 'uES13ES16']
+            'uGR1000A', 'uGR1000B', 'uES13ES16',
+            'gAH11A1', 'gAH11B1', 'gAH11C1', 'gAH11D1', 'gAH11A2', 'gAH11B2', 'gAH11C2', 'gAH11D2',
+            'gES14', 'gES13', 'gES16', 'gGR10', 'gGR100', 'gGR1000A', 'gGR1000B', 'gES13ES16', 'ugAH11A1', 'ugAH11B1',
+            'ugAH11C1',
+            'ugAH11D1', 'ugAH11A2', 'ugAH11B2', 'ugAH11C2', 'ugAH11D2', 'ugES14', 'ugES13', 'ugES16', 'ugGR10', 'ugGR100',
+            'ugGR1000A', 'ugGR1000B', 'ugES13ES16'
+            ]
         output.append(head_row)
         for i in range(len(self.ah11a1[selected_ppm])):
             line = []
-            line.append(self.ah11a1['cppm'][i][0])
+            line.append(self.ah11a1['cppm'][i][0])  # this is the date, the same for all capacitors
             for x in self.dicts:
                 line.append(self.all_dict[x][selected_ppm][i][1])  # corrected ppm
             for x in self.dicts:
                 line.append(self.all_dict[x][selected_ppm][i][2])  # uncertainty
+            for x in self.dicts:
+                line.append(self.all_dict[x]['conduct'][i][0])  # conductance in nS
+            for x in self.dicts:
+                line.append(self.all_dict[x]['conduct'][i][1])  # uncertainty of conductance in nS
             output.append(line)
         return output
 

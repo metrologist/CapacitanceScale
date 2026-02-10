@@ -1,0 +1,10 @@
+Working directory,temp_data\October2025
+Dial input,dialcal_in_2025-07-11.csv
+Dial output,dialcal_out_2025-07-11.csv
+Permutable,comp_permute_2025-02-07.csv
+Ratio input,ratiocal_in_2025-11-26.csv
+Ratio output,ratiocal_out_2025-11-26.csv
+Scale input,capcal_in_2025-12-01.csv
+Scale output,capcal_out_2025-12-01.csv
+Leads and caps,comp_leads_caps_2025-07-11.csv
+Reference,reference_val_2021-08-24.csv

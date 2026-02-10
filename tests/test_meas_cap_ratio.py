@@ -4,7 +4,7 @@ test_meas_cap_ratio.py
 def test_cap_ratio():
     import os
     from GTC import ureal, ucomplex
-    from meas_cap_ratio import CAPSCALE
+    from capscale import CAPSCALE
 
     cwd = os.getcwd()
     w = 1e4  # rad/s

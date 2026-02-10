@@ -15,7 +15,7 @@ from datetime import datetime as dt
 from dateutil import parser
 import time
 from msl.nlf import Model
-from dict_test import FUNCDICTL
+from funcdictl import FUNCDICTL
 
 
 class PRIMCAL():

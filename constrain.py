@@ -3,7 +3,7 @@
 from primcal import PRIMCAL
 from matplotlib import pyplot as plt
 from GTC import ureal
-from dict_test import FUNCDICTL
+from funcdictl import FUNCDICTL
 
 class CONSTRAINT():
     def __init__(self, capa, capb, capc, capd):

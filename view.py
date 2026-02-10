@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import _pylab_helpers
 
 # Load the pickled figure
+# file_name = 'AH11 set.pkl'
 file_name = 'GR and S ball set.pkl'
 with open(file_name, 'rb') as f:
     my_fig = pickle.load(f)  # Deserialize the figure
@@ -15,3 +16,4 @@ mgr = bem.new_figure_manager_given_figure(num=my_fig.number, figure=my_fig)
 # set the new figure manager as active
 _pylab_helpers.Gcf.set_active(mgr)
 plt.show(block=True)
+plt.close()

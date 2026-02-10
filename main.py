@@ -9,7 +9,7 @@ the input/output directories/files that are used in the specific calculation.
 """
 from cal_balance import DIALCAL  # calibration of the balance injection dials
 from cal_main_ratio import PERMUTE  # calibration of the 10:1 voltage ratio
-from meas_cap_ratio import CAPSCALE  # calibration of all the capacitors relative to a reference
+from capscale import CAPSCALE  # calibration of all the capacitors relative to a reference
 import csv
 from GTC import ureal
 from GTC.reporting import budget  # just for checks

@@ -5,13 +5,14 @@
 
 from cal_balance import DIALCAL  # calibration of the balance injection dials
 from cal_main_ratio import PERMUTE  # calibration of the 10:1 voltage ratio
-from meas_cap_ratio import CAPSCALE  # calibration of all the capacitors relative to a reference
+from capscale import CAPSCALE  # calibration of all the capacitors relative to a reference
 import csv
 from GTC import ureal
 from GTC.reporting import budget  # just for checks
 from summary_check import SUMMARY
 import os
 from analysis import ANALYSE
+from math import pi
 
 
 class BATCH():
@@ -48,7 +49,7 @@ class BATCH():
             factora, factorb = cal_dials.dialfactors(file_output=True, append=False)
 
             # Note that previously the results from 'Dial output' were manually pasted into 'Ratio input'.
-            # This means that cal_main_ratio.py is now modified to read the factors from from above ('Dial output')
+            # This means that cal_main_ratio.py is now modified to read the factors from above ('Dial output')
             # rather than 'Ratio input'. This needs to be tidied up
             print('Testing cal_main_ratio.py')
             ratio_cal = PERMUTE(os.path.join(cwd, file_dict['Working directory']),
@@ -78,7 +79,7 @@ class BATCH():
             ucap = float(ref_dict['ucap'])  # relative expanded uncertainty, k = 2
             dfact = float(ref_dict['dfact'])  # dissipation factor S/F/Hz
             udfact = float(ref_dict['udfact'])  # S/F/Hz
-            g = ureal(dfact * w * cap, udfact / 2 * w * cap, 50, label='ah11c1d')
+            g = ureal(dfact * w * cap / (2 * pi), udfact / 2 * w * cap / (2 * pi), 50, label='ah11c1d')
             c = ureal(cap, cap * ucap / 2, 50, label='ah11c1c')
             cert = g + 1j * w * c  # admittance of reference at angular frequency w
             print('reference value for buildup = ', repr(cert))
@@ -108,22 +109,26 @@ class BATCH():
 
 
 if __name__ == '__main__':
-    files = [r'main_2021-08-23_a.csv',
-        r'main_2021-08-27_a.csv',
-        r'main_2021-09-06_a.csv',
+    files = [r'main_2019-09-19.csv',
+        r'main_2019-10-04.csv',
+        r'main_2019-11-15.csv',
+        r'main_2020-12-22.csv',
+        r'main_2021-09-03.csv',
         r'main_2021-09-09.csv',
         r'main_2021-09-10.csv',
-        r'main_2021-09-22.csv',
-        r'main_2021-10-11_b.csv',
-        r'main_2022-04-07.csv',
+        r'main_2021-09-21.csv',
+        r'main_2021-10-11.csv',
+        r'main_2022-04-12.csv',
         r'main_2025-07-03.csv',
         r'main_2025-07-04.csv',
         r'main_2025-07-07.csv',
-        r'new_main_2025-07-08.csv',
+        r'main_2025-07-08.csv',
         r'main_2025-10-23.csv',
         r'main_2025-10-28.csv',
         r'main_2025-11-06.csv',
-        r'main_2025-11-21.csv']  # new is the trial with more recent dial and ratio calibration
+        r'main_2025-11-21.csv',
+        r'main_2025-12-01.csv',
+        r'main_2025-12-05.csv']  # new is the trial with more recent dial and ratio calibration
     # files = [r'main_2021-08-27_a.csv', r'main_2025-07-08.csv'] # select subset
     batch = BATCH(files, 'temp_run')
     summary_files = batch.execute()  # both executes the buildups and gives the list of summary files
