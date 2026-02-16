@@ -14,7 +14,6 @@ class REFERENCE():
 
         coefficient1 = 0.003086584
 
-        # equation1 = 'a1 + a2 * x'
         equation1 = fn_set.f_dict['func1']  # FUNCDICT version
 
         cap2 = [('Mar 19 2009', (9.999953022, 0.000000400, 50, 31.4)),
@@ -23,7 +22,7 @@ class REFERENCE():
                 ]
 
         coefficient2 = 0.004026581
-        # equation2 = 'a1 + a2 * x'
+
         equation2 = fn_set.f_dict['func1']  # FUNCDICT version
 
         cap3 = [('Mar 19 2009', (99.999557221, 0.000004000, 50, 31.4)),
@@ -32,7 +31,7 @@ class REFERENCE():
                 ]
 
         coefficient3 = -0.001883384
-        # equation3 = 'a1 + a2 * x'
+
         equation3 = fn_set.f_dict['func1']  # FUNCDICT version
 
         cap4 = [('Mar 19 2009', (99.999548221, 0.000004000, 50, 31.4)),
@@ -41,7 +40,7 @@ class REFERENCE():
                 ]
 
         coefficient4 = -0.003210803
-        # equation4 = 'a1 + a2 * x'
+
         equation4 = fn_set.f_dict['func1']  # FUNCDICT version
 
         # Create instances of PRIMCAL
