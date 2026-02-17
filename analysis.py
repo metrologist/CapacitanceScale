@@ -430,9 +430,9 @@ class ANALYSE():
         plt.title(title)
         plt.legend()
         plt.tight_layout()
-        plt.savefig(title + '.pdf')
-        plt.savefig(title + '.jpg')
-        with open(title + '.pkl', 'wb') as f:  # use view.py to interact later
+        plt.savefig(r'graphs/' + title + '.pdf')
+        plt.savefig(r'graphs/' + title + '.jpg')
+        with open(r'graphs/' + title + '.pkl', 'wb') as f:  # use view.py to interact later
             pickle.dump(fig, f)
         # html_fig = mpld3.fig_to_html(fig)
         # with open(title +'.html', "w") as f:
@@ -497,4 +497,4 @@ if __name__ == '__main__':
     anal.plot(['AH11A1', 'AH11B1', 'AH11C1', 'AH11D1', 'AH11A2', 'AH11B2', 'AH11C2', 'AH11D2'], 'AH11 set')
     anal.plot( ['ES14', 'ES13', 'ES16', 'GR10', 'GR100', 'GR1000A', 'GR1000B', 'ES13ES16'], 'GR and S ball set')
     out_block = anal.out_block()  # prepares csv-friendly lists
-    anal.file_block('test_analysis.csv', out_block)  # writes to csv file
+    anal.file_block('analysis.csv', out_block)  # writes to csv file

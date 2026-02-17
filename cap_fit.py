@@ -80,7 +80,7 @@ class CAPFIT():
         ax.errorbar(time_axis, cap, yerr=cap_u, linestyle="None", fmt='o', capsize=10)
         plt.title(selected_dict['name'])
         plt.show()
-        with open(selected_dict['name'] + '.pkl', 'wb') as f:  # for view.py
+        with open(r'graphs/' + selected_dict['name'] + '.pkl', 'wb') as f:  # for view.py
             pickle.dump(fig, f)
         plt.close(fig)
 

@@ -130,7 +130,7 @@ if __name__ == '__main__':
         r'main_2025-12-01.csv',
         r'main_2025-12-05.csv']  # new is the trial with more recent dial and ratio calibration
     # files = [r'main_2021-08-27_a.csv', r'main_2025-07-08.csv'] # select subset
-    batch = BATCH(files, 'temp_run')
+    batch = BATCH(files, 'run_lists')
     summary_files = batch.execute()  # both executes the buildups and gives the list of summary files
     anal = ANALYSE(summary_files)
     anal.all_sumry()  # loads the data
@@ -139,5 +139,5 @@ if __name__ == '__main__':
     anal.plot(['AH11A1', 'AH11B1', 'AH11C1', 'AH11D1', 'AH11A2', 'AH11B2', 'AH11C2', 'AH11D2'], 'AH11 set')
     anal.plot(['ES14', 'ES13', 'ES16', 'GR10', 'GR100', 'GR1000A', 'GR1000B', 'ES13ES16'], 'GR and S ball set')
     out_block = anal.out_block()  # prepares csv-friendly lists
-    anal.file_block('test_analysis.csv', out_block)  # writes to csv file
+    anal.file_block('analysis.csv', out_block)  # writes to csv file
     anal.store_dicts()

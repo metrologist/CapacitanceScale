@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from matplotlib import _pylab_helpers
 
 # Load the pickled figure
-# file_name = 'AH11 set.pkl'
-file_name = 'GR and S ball set.pkl'
+# file_name = r'graphs/' + 'AH11 set.pkl'
+file_name = r'graphs/' + 'GR and S ball set.pkl'
 with open(file_name, 'rb') as f:
     my_fig = pickle.load(f)  # Deserialize the figure
 # make sure plt has set a backend and get it
