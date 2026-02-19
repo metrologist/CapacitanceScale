@@ -7,6 +7,8 @@ from matplotlib import _pylab_helpers
 # Load the pickled figure
 # file_name = r'graphs/' + 'AH11 set.pkl'
 file_name = r'graphs/' + 'GR and S ball set.pkl'
+file_name = r'graphs/' + 'GR10.pkl'
+file_name = r'graphs/' + 'ES13.pkl'
 with open(file_name, 'rb') as f:
     my_fig = pickle.load(f)  # Deserialize the figure
 # make sure plt has set a backend and get it
@@ -15,5 +17,5 @@ bem = plt._get_backend_mod()
 mgr = bem.new_figure_manager_given_figure(num=my_fig.number, figure=my_fig)
 # set the new figure manager as active
 _pylab_helpers.Gcf.set_active(mgr)
-plt.show(block=True)
+plt.show(block=True)  # not sure of purpose
 plt.close()
