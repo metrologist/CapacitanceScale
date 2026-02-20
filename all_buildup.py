@@ -1,7 +1,4 @@
 # all_buildup.py will reprocess all selected data sets to produce a consistent history
-# this is built on the previous main.py, essentially running that repeatedly
-# likely that automated file naming (i.e. incorporating date) will help
-# likely that the BATCH class will be put in a separate script
 
 from cal_balance import DIALCAL  # calibration of the balance injection dials
 from cal_main_ratio import PERMUTE  # calibration of the 10:1 voltage ratio
@@ -19,6 +16,8 @@ class BATCH():
     def __init__(self, main_list, folder):
         """
 
+        Each data set from a buildup as collected in the csv files in the run_lists folder is processed
+        so that the values of all the capacitors are linked to the externally calibrated set of AH11 capacitors.
         :param main_list: a list of all the main_yyyy-dd_x.csv lists of input data
         :param folder: the folder that holds this set of files
         """

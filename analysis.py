@@ -13,7 +13,9 @@ class ANALYSE():
     def __init__(self, file_list):
         """
 
-        :param file_list:
+        picks up a set of summary_main.csv files and normalises all capacitor values to a chosen constraint
+        this replaces the need to copy and paste from csv into xlsx for generating lists and graphs
+        :param file_list: the list of run_lists files that collect the data file set for each buildup
         """
         self.pred = REFERENCE()  # used for decimal date as well as the reference values
         self.file_list = file_list

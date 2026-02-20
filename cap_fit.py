@@ -189,7 +189,7 @@ class CAPFIT():
                 writer.writerow(x)
 
 if __name__ == '__main__':
-    date_for_prediction = '19 July 2026'
+    date_for_prediction = '19 July 2030'
     c =CAPFIT(date_for_prediction)
     dict_list = c.load_file()  # extract dictionaries
     plt.ion()  # the interactive mode must be on for close() to work
