@@ -17,8 +17,8 @@ release = '1.0'
 
 sys.path.insert(0, os.path.abspath(r'C:\Users\k.jones\OneDrive - Callaghan Innovation\KJ\PycharmProjects\CapacitanceScale'))
 
-extensions = ['sphinx.ext.autodoc']
-
+extensions = ['sphinx.ext.autodoc'
+              ]
 autodoc_default_options = {'special-members': '__init__', 'autoclass-content': 'both'}
 
 templates_path = ['_templates']
@@ -29,5 +29,5 @@ exclude_patterns = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'alabaster'
+html_theme = 'sphinxdoc'
 html_static_path = ['_static']

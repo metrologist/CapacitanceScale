@@ -4,6 +4,11 @@ from funcdictl import FUNCDICTL
 
 class REFERENCE():
     def __init__(self):  # built in external calibrations
+        """
+
+        REFERENCE holds the external calibration values and temperature coefficients for AH11#1.
+        It creates PRIMCAL and CONSTRAINT objects based on the external calibration values.
+        """
         fn_set = FUNCDICTL()
         std_temperature = 29
 

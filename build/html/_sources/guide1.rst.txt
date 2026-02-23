@@ -1,4 +1,4 @@
-This guide explains where and how to enter the data required for processing with the Python software collected in the CapacitanceScale project. Details of the code are not described here. While significant improvements to the software are planned this manual focuses on the current state when MSLT.E.005.04 is validated, ideally matching a GitHub release version.  The general flow of data gathering and processing is shown below where the light green processes are labelled with the key Python class that implements the process.
+This guide explains where and how to enter the data required for processing with the Python software collected in the CapacitanceScale project. Details of the code are not described here. While significant improvements to the software are planned this guide focuses on the current state when MSLT.E.005.04 is validated, ideally matching a GitHub release version.  The general flow of data gathering and processing is shown below where the light green processes are labelled with the key Python class that implements the process.
 
 .. image:: Data_flow1.png
 
@@ -185,16 +185,16 @@ The date of the main file should match the date of the capcal_in file, but there
     dfact,1.9e-6,dissipation factor S/F/Hz
     udfact,0.6e-6,S/F/Hz k=2
 
-The most recent main csv file is then added to the files list in the ‘__main__’ part of *all_buildup.py*
+The most recent main csv file is then added to the files list in the *main.py* which uses the BATCH class in *all_buildup.py*
 
 .. code-block::
 
     files = [r'main_2019-09-19.csv',
         r'main_2019-10-04.csv',
         r'main_2019-11-15.csv',
-    …
-    …
-    …
+    -
+    -
+    -
         r'main_2025-10-23.csv',
         r'main_2025-10-28.csv',
         r'main_2025-11-06.csv',
@@ -279,6 +279,26 @@ A single prediction date is hard-coded
 Python Scripts
 ==============
 
-
-
-
+=====================  ================================================
+Script                 Purpose
+=====================  ================================================
+*main.py*              edited to select files for *all_buildup.py*
+*all_buildup.py*       final analysis of a set of buildups
+*analysis.py*          reprocesses raw buildup results with corrections for the constraint and influence quantities
+*archive.py*           general storage of GTC values and dictionaries in csv files
+*cal_balance.py*       calculates correction factors for the main balance amplifier
+*cal_main_ratio.py*    calculates the 10:1 voltage ratio
+*cap_fit.py*           analyses historical values of all the capacitors
+*capscale.py*          produces raw results from a buildup
+*components.py*        objects that contain properties of capacitors and leads (COMPONENT)
+*conditions.py*        manages the dictionary of temperature and pressure measurements
+*constrain.py*         manages external calibration values
+*create_component.py*  creates csv files for a COMPONENT
+*funcdictl.py*         utility to define functions for MSL-NLF module
+*intertime.py*         utility to convert between different representations of time
+*primcal.py*           supports reference.py
+*reference.py*         uses external calibrations to predict values of the reference AH11
+*sql_cap.py*           extracts temperatures from the capacitance logging system [in caplogger2014]
+*summary_check.py*     summarises output of capscale.py before final processing
+*view.py*              viewer for graphs produced by all_buildup.py
+=====================  ================================================

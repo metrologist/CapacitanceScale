@@ -12,21 +12,4 @@ Capacitance Scale documentation
 
 .. include:: guide1.rst
 
-Batch running of input data
-===========================
-
-
-.. automodule:: all_buildup
-   :members:
-
-.. autoclass:: BATCH
-   :members:
-
-Cal Balance
------------
-
-.. automodule:: cal_balance
-   :members:
-
-.. autoclass:: DIALCAL
-   :members:
+.. include:: guide2.rst
