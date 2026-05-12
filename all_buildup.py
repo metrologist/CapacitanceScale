@@ -8,7 +8,6 @@ from GTC import ureal
 from GTC.reporting import budget  # just for checks
 from summary_check import SUMMARY
 import os
-from analysis import ANALYSE
 from math import pi
 
 

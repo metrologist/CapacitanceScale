@@ -1,8 +1,8 @@
-This guide explains where and how to enter the data required for processing with the Python software collected in the CapacitanceScale project. Details of the code are not described here. While significant improvements to the software are planned this guide focuses on the current state when MSLT.E.005.04 is validated, ideally matching a GitHub release version.  The general flow of data gathering and processing is shown below where the light green processes are labelled with the key Python class that implements the process.
+This guide explains where and how to enter the data required for processing with the Python software collected in the CapacitanceScale project. Details of the code are not described here. While significant improvements to the software are planned this guide focuses on the current state when MSLT.E.005.04 is validated, with a matching GitHub release.  The general flow of data gathering and processing is shown below where the light green processes are labelled with the key Python class that implements the process.
 
 .. image:: Data_flow1.png
 
-This software version has evolved (since E.005.03) to incorporate temperature and pressure corrections, alternative balance schemes for the 0.5 pF capacitor, batch processing of historical data, graphing of data, fitting to data to facilitate short term prediction of capacitor values. This replaces analysis steps previously carried out in Excel spreadsheets. Extensive use of intermediate csv files means that spreadsheet views can be generated if required. The figure below captures these additional processes.
+This software version has evolved (since E.005.03) to incorporate temperature and pressure corrections, alternative balance schemes for the 0.5 pF capacitor, batch processing of historical data, graphing of data, fitting to data to facilitate short term prediction of capacitor values. This replaces analysis steps previously carried out in Excel spreadsheets. Extensive use of intermediate csv files means that spreadsheet views can be generated if required. The figure below captures these additional processes, focussing on the python classes (in green) that hold the relevant calculation methods.
 
 .. image:: Data_flow2.png
 
@@ -28,8 +28,8 @@ Permutable Capacitor
 --------------------
 While the permutable capacitor is essentially a set of two terminal-pair capacitors, its internal switching makes it unique, and its relevant parameters are hard-coded in the *create_permutable()* method CREATOR of *create_component.py* and stored in comp_permute_yyyy-mm-dd.csv. Note that the values of the individual permutable capacitors do change over time. It is efficient to update these directly in the csv file.
 
-Calibration
-===========
+Calibration of Voltage Ratios
+=============================
 
 Balance Injection
 -----------------
@@ -139,12 +139,34 @@ It is acceptable to rely on manual readings of the front panel display of the AH
 Other temperatures are logged from a multiplexed HP34970 meter using a local Windows 7 laptop. It is essential that this system is operating, preferably on the 5-minute interval, while measurements are being made. At present the SQLite database file is ‘cap_environment_May_2022_on.db’ and this should be copied off the laptop before starting the analysis of the measurements. The caplogger2014 project uses sql_cap.py to extract the values in a specified range, e.g.
 
 .. code-block::
- date_tuples_2 = [('19 September, 2019, 9:00 AM', '19 September, 2019, 4:00 PM')]
- sql = SQLDATA('LoggerData\cap_environment_August_2019_on.db')
 
-The text output from running *sql_cap.py* is pasted into the ‘text_python_console’ worksheet of caplogger.xlsx before being manually pasted, number by number, into the ‘table’ worksheet. This spreadsheet maintains a record of the buildup runs in the ‘buildups’ worksheet. This spreadsheet is the source for manual entry into ‘capcal_in_yyyy-mm-dd.csv’.
+    date_tuples_2 = [('19 September, 2019, 9:00 AM', '19 September, 2019, 4:00 PM')]
+    sql = SQLDATA('LoggerData\cap_environment_August_2019_on.db')
+
+The text output from running *sql_cap.py* is pasted into the ‘text_python_console’ worksheet of ~\Electricity\Ongoing\Farad\ImportingCapacitance\NMIA\caplogger.xlsx before being manually pasted, number by number, into the ‘table’ worksheet. This spreadsheet maintains a record of the buildup runs in the ‘buildups’ worksheet. This spreadsheet is the source for manual entry into ‘capcal_in_yyyy-mm-dd.csv’.
 Direct editing of the code is required to enter new date ranges.
-The code is available at metrologist/caplogger2014: Legacy logging system for a set of precision capacitors.
+
+A near identical approach is taken with *sql_pres.py* where the database is taken from the electrical laboratory logging system still uses SQLite, but with minor differences in the tables.
+
+.. code-block::
+
+    date_tuples_2 = [
+        ('3 July, 2025, 1:00 AM', '3 July, 2025, 4:00 PM'),
+        ('4 July, 2025, 9:00 AM', '4 July, 2025, 4:00 PM'),
+        ('7 July, 2025, 9:00 AM', '7 July, 2025, 4:00 PM'),
+        ('8 July, 2025, 9:00 AM', '8 July, 2025, 4:00 PM'),
+        ('11 July, 2025, 9:00 AM', '11 July, 2025, 4:00 PM'),
+        ('23 October, 2025, 9:00 AM', '23 October, 2025, 4:00 PM'),
+        ('28 October, 2025, 9:00 AM', '28 October, 2025, 4:00 PM'),
+        ('3 November, 2025, 9:00 AM', '3 November, 2025, 4:00 PM'),
+        ('6 November, 2025, 9:00 AM', '6 November, 2025, 4:00 PM'),
+        ('21 November, 2025, 9:00 AM', '21 November, 2025, 4:00 PM'),
+        ('1 December, 2025, 9:00 AM', '1 December, 2025, 4:00 PM'),
+        ('5 December, 2025, 9:00 AM', '5 December, 2025, 4:00 PM')
+                     ]
+    sql = SQLDATA_P('LoggerData\druck.db')
+
+The code is available at metrologist/caplogger2014 with a release tagged to MSLT.E.005.04.
 
 Influence Coefficients
 ----------------------
@@ -156,7 +178,7 @@ Temperature and pressure coefficients for the General Radio and sapphire ball ca
 
 Calculation
 ============
-The preferred approach is to calculate the whole history of buildups together with the current new run so that the latest result is easily presented in the context of the previous results. It is possible to run the individual steps in isolation but probably with some minor editing of the “if __name__ == '__main__':” part of the modules.
+The preferred approach is to calculate the whole history of buildups together with the current new run so that the latest result is easily presented in the context of the previous results. Alternatively, it is possible to run the individual steps in isolation with minor editing of the “if __name__ == '__main__':” part of the modules.
 
 Data Selection
 --------------
@@ -299,6 +321,34 @@ Script                 Purpose
 *primcal.py*           supports reference.py
 *reference.py*         uses external calibrations to predict values of the reference AH11
 *sql_cap.py*           extracts temperatures from the capacitance logging system [in caplogger2014]
+*sql_pres.py*          extracts atmospheric pressure from the laboratory logging system
 *summary_check.py*     summarises output of capscale.py before final processing
 *view.py*              viewer for graphs produced by all_buildup.py
 =====================  ================================================
+
+Overview of how the scripts connect
+-----------------------------------
+This diagram summarises the overall process showing the role of the various python scripts and data files. It is complementary to the initial diagram that focussed on the classes.
+
+.. image:: Overview.png
+
+Python
+------
+This version is run with Python 3.14.0 and uses GTC version 1.5.1. See pyproject.toml for more information.
+
+Documentation
+-------------
+This document has been produced by sphinx 9.1.0 installed in the GTC3 environment. Updating this document requires
+that the .rst files are updated in the /source directory of the project file. Next using the miniconda text console activate the GTC3 environment (where Sphinx
+is installed), navigate to the project directory and run >make html. This runs make.bat that creates the document in
+the /build/html folder, accessed by opening index.html. Note that restructured text files have strict format and
+command requirements so remember to check that your modifications appear correctly in the new html files. The /source directory also
+contains conf.py. This can be edited to alter the source directory for the project as well as the settings for
+extensions and themes used by Sphinx.
+
+Testing
+-------
+Testing has not yet been set up for this version.
+
+[Old scripts and data for testing are in the testing folder. The test suite is run from the miniconda command line by
+navigating to \CapacitanceScale\tests folder and running pytest.]

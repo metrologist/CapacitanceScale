@@ -1,5 +1,5 @@
 from all_buildup import BATCH
-from all_buildup import ANALYSE
+from analysis import ANALYSE
 
 files = [r'main_2019-09-19.csv',
         r'main_2019-10-04.csv',

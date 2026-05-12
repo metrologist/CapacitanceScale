@@ -37,9 +37,9 @@
 <h1>Capacitance Scale documentation<a class="headerlink" href="#capacitance-scale-documentation" title="Link to this heading">¶</a></h1>
 <div class="toctree-wrapper compound">
 </div>
-<p>This guide explains where and how to enter the data required for processing with the Python software collected in the CapacitanceScale project. Details of the code are not described here. While significant improvements to the software are planned this guide focuses on the current state when MSLT.E.005.04 is validated, ideally matching a GitHub release version.  The general flow of data gathering and processing is shown below where the light green processes are labelled with the key Python class that implements the process.</p>
+<p>This guide explains where and how to enter the data required for processing with the Python software collected in the CapacitanceScale project. Details of the code are not described here. While significant improvements to the software are planned this guide focuses on the current state when MSLT.E.005.04 is validated, with a matching GitHub release.  The general flow of data gathering and processing is shown below where the light green processes are labelled with the key Python class that implements the process.</p>
 <img alt="_images/Data_flow1.png" src="_images/Data_flow1.png" />
-<p>This software version has evolved (since E.005.03) to incorporate temperature and pressure corrections, alternative balance schemes for the 0.5 pF capacitor, batch processing of historical data, graphing of data, fitting to data to facilitate short term prediction of capacitor values. This replaces analysis steps previously carried out in Excel spreadsheets. Extensive use of intermediate csv files means that spreadsheet views can be generated if required. The figure below captures these additional processes.</p>
+<p>This software version has evolved (since E.005.03) to incorporate temperature and pressure corrections, alternative balance schemes for the 0.5 pF capacitor, batch processing of historical data, graphing of data, fitting to data to facilitate short term prediction of capacitor values. This replaces analysis steps previously carried out in Excel spreadsheets. Extensive use of intermediate csv files means that spreadsheet views can be generated if required. The figure below captures these additional processes, focussing on the python classes (in green) that hold the relevant calculation methods.</p>
 <img alt="_images/Data_flow2.png" src="_images/Data_flow2.png" />
 </section>
 <section id="components">
@@ -64,8 +64,8 @@ For each set of ratio measurements when building up the scale there needs to be 
 <p>While the permutable capacitor is essentially a set of two terminal-pair capacitors, its internal switching makes it unique, and its relevant parameters are hard-coded in the <em>create_permutable()</em> method CREATOR of <em>create_component.py</em> and stored in comp_permute_yyyy-mm-dd.csv. Note that the values of the individual permutable capacitors do change over time. It is efficient to update these directly in the csv file.</p>
 </section>
 </section>
-<section id="calibration">
-<h1>Calibration<a class="headerlink" href="#calibration" title="Link to this heading">¶</a></h1>
+<section id="calibration-of-voltage-ratios">
+<h1>Calibration of Voltage Ratios<a class="headerlink" href="#calibration-of-voltage-ratios" title="Link to this heading">¶</a></h1>
 <section id="balance-injection">
 <h2>Balance Injection<a class="headerlink" href="#balance-injection" title="Link to this heading">¶</a></h2>
 <p>Calculating the correction factors for the balance injection dials is done by <em>cal_balance.py</em> using data entered in the file dialcal_in_yyyy-mm-dd.csv. There is no script for creating this file, but it does not take long to edit a previous version with the IVD settings, the measured dc value of the Thompson resistor and its parallel capacitance. Be careful not to change any of the quotation marks as they are critical for correctly reading the dictionary.</p>
@@ -162,9 +162,31 @@ For each set of ratio measurements when building up the scale there needs to be 
 <p>It is essential that the temperatures of the two AH11s, the inner temperature of the General Radio enclosure, the temperature of the sapphire ball oil bath and the atmospheric pressure are recorded during the buildup measurements.
 It is acceptable to rely on manual readings of the front panel display of the AH11 chassis temperatures and the screen display of the Vaisala barometer.
 Other temperatures are logged from a multiplexed HP34970 meter using a local Windows 7 laptop. It is essential that this system is operating, preferably on the 5-minute interval, while measurements are being made. At present the SQLite database file is ‘cap_environment_May_2022_on.db’ and this should be copied off the laptop before starting the analysis of the measurements. The caplogger2014 project uses sql_cap.py to extract the values in a specified range, e.g.</p>
-<p>The text output from running <em>sql_cap.py</em> is pasted into the ‘text_python_console’ worksheet of caplogger.xlsx before being manually pasted, number by number, into the ‘table’ worksheet. This spreadsheet maintains a record of the buildup runs in the ‘buildups’ worksheet. This spreadsheet is the source for manual entry into ‘capcal_in_yyyy-mm-dd.csv’.
-Direct editing of the code is required to enter new date ranges.
-The code is available at metrologist/caplogger2014: Legacy logging system for a set of precision capacitors.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">date_tuples_2</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;19 September, 2019, 9:00 AM&#39;</span><span class="p">,</span> <span class="s1">&#39;19 September, 2019, 4:00 PM&#39;</span><span class="p">)]</span>
+<span class="n">sql</span> <span class="o">=</span> <span class="n">SQLDATA</span><span class="p">(</span><span class="s1">&#39;LoggerData\cap_environment_August_2019_on.db&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The text output from running <em>sql_cap.py</em> is pasted into the ‘text_python_console’ worksheet of ~ElectricityOngoingFaradImportingCapacitanceNMIAcaplogger.xlsx before being manually pasted, number by number, into the ‘table’ worksheet. This spreadsheet maintains a record of the buildup runs in the ‘buildups’ worksheet. This spreadsheet is the source for manual entry into ‘capcal_in_yyyy-mm-dd.csv’.
+Direct editing of the code is required to enter new date ranges.</p>
+<p>A near identical approach is taken with <em>sql_pres.py</em> where the database is taken from the electrical laboratory logging system still uses SQLite, but with minor differences in the tables.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">date_tuples_2</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s1">&#39;3 July, 2025, 1:00 AM&#39;</span><span class="p">,</span> <span class="s1">&#39;3 July, 2025, 4:00 PM&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;4 July, 2025, 9:00 AM&#39;</span><span class="p">,</span> <span class="s1">&#39;4 July, 2025, 4:00 PM&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;7 July, 2025, 9:00 AM&#39;</span><span class="p">,</span> <span class="s1">&#39;7 July, 2025, 4:00 PM&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;8 July, 2025, 9:00 AM&#39;</span><span class="p">,</span> <span class="s1">&#39;8 July, 2025, 4:00 PM&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;11 July, 2025, 9:00 AM&#39;</span><span class="p">,</span> <span class="s1">&#39;11 July, 2025, 4:00 PM&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;23 October, 2025, 9:00 AM&#39;</span><span class="p">,</span> <span class="s1">&#39;23 October, 2025, 4:00 PM&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;28 October, 2025, 9:00 AM&#39;</span><span class="p">,</span> <span class="s1">&#39;28 October, 2025, 4:00 PM&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;3 November, 2025, 9:00 AM&#39;</span><span class="p">,</span> <span class="s1">&#39;3 November, 2025, 4:00 PM&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;6 November, 2025, 9:00 AM&#39;</span><span class="p">,</span> <span class="s1">&#39;6 November, 2025, 4:00 PM&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;21 November, 2025, 9:00 AM&#39;</span><span class="p">,</span> <span class="s1">&#39;21 November, 2025, 4:00 PM&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;1 December, 2025, 9:00 AM&#39;</span><span class="p">,</span> <span class="s1">&#39;1 December, 2025, 4:00 PM&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;5 December, 2025, 9:00 AM&#39;</span><span class="p">,</span> <span class="s1">&#39;5 December, 2025, 4:00 PM&#39;</span><span class="p">)</span>
+                 <span class="p">]</span>
+<span class="n">sql</span> <span class="o">=</span> <span class="n">SQLDATA_P</span><span class="p">(</span><span class="s1">&#39;LoggerData\druck.db&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The code is available at metrologist/caplogger2014 with a release tagged to MSLT.E.005.04.</p>
 </section>
 <section id="influence-coefficients">
 <h2>Influence Coefficients<a class="headerlink" href="#influence-coefficients" title="Link to this heading">¶</a></h2>
@@ -175,7 +197,7 @@ The code is available at metrologist/caplogger2014: Legacy logging system for a 
 </section>
 <section id="calculation">
 <h1>Calculation<a class="headerlink" href="#calculation" title="Link to this heading">¶</a></h1>
-<p>The preferred approach is to calculate the whole history of buildups together with the current new run so that the latest result is easily presented in the context of the previous results. It is possible to run the individual steps in isolation but probably with some minor editing of the “if __name__ == ‘__main__’:” part of the modules.</p>
+<p>The preferred approach is to calculate the whole history of buildups together with the current new run so that the latest result is easily presented in the context of the previous results. Alternatively, it is possible to run the individual steps in isolation with minor editing of the “if __name__ == ‘__main__’:” part of the modules.</p>
 <section id="data-selection">
 <h2>Data Selection<a class="headerlink" href="#data-selection" title="Link to this heading">¶</a></h2>
 <p>For each buildup a csv file is created that identifies the input and output files needed to complete the calculation. Naming convention for this file is main_yyyy-mm-dd.csv. This main file is structured as</p>
@@ -346,14 +368,42 @@ A single prediction date is hard-coded</p>
 <tr class="row-even"><td><p><em>sql_cap.py</em></p></td>
 <td><p>extracts temperatures from the capacitance logging system [in caplogger2014]</p></td>
 </tr>
-<tr class="row-odd"><td><p><em>summary_check.py</em></p></td>
+<tr class="row-odd"><td><p><em>sql_pres.py</em></p></td>
+<td><p>extracts atmospheric pressure from the laboratory logging system</p></td>
+</tr>
+<tr class="row-even"><td><p><em>summary_check.py</em></p></td>
 <td><p>summarises output of capscale.py before final processing</p></td>
 </tr>
-<tr class="row-even"><td><p><em>view.py</em></p></td>
+<tr class="row-odd"><td><p><em>view.py</em></p></td>
 <td><p>viewer for graphs produced by all_buildup.py</p></td>
 </tr>
 </tbody>
 </table>
+<section id="overview-of-how-the-scripts-connect">
+<h2>Overview of how the scripts connect<a class="headerlink" href="#overview-of-how-the-scripts-connect" title="Link to this heading">¶</a></h2>
+<p>This diagram summarises the overall process showing the role of the various python scripts and data files. It is complementary to the initial diagram that focussed on the classes.</p>
+<img alt="_images/Overview.png" src="_images/Overview.png" />
+</section>
+<section id="python">
+<h2>Python<a class="headerlink" href="#python" title="Link to this heading">¶</a></h2>
+<p>This version is run with Python 3.14.0 and uses GTC version 1.5.1. See pyproject.toml for more information.</p>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">¶</a></h2>
+<p>This document has been produced by sphinx 9.1.0 installed in the GTC3 environment. Updating this document requires
+that the .rst files are updated in the /source directory of the project file. Next using the miniconda text console activate the GTC3 environment (where Sphinx
+is installed), navigate to the project directory and run &gt;make html. This runs make.bat that creates the document in
+the /build/html folder, accessed by opening index.html. Note that restructured text files have strict format and
+command requirements so remember to check that your modifications appear correctly in the new html files. The /source directory also
+contains conf.py. This can be edited to alter the source directory for the project as well as the settings for
+extensions and themes used by Sphinx.</p>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading">¶</a></h2>
+<p>Testing has not yet been set up for this version.</p>
+<p>[Old scripts and data for testing are in the testing folder. The test suite is run from the miniconda command line by
+navigating to CapacitanceScaletests folder and running pytest.]</p>
+</section>
 </section>
 <section id="python-code">
 <h1>Python Code<a class="headerlink" href="#python-code" title="Link to this heading">¶</a></h1>
@@ -1816,7 +1866,7 @@ json strings holding uncertain numbers.</p>
 <li><a class="reference internal" href="#permutable-capacitor">Permutable Capacitor</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#calibration">Calibration</a><ul>
+<li><a class="reference internal" href="#calibration-of-voltage-ratios">Calibration of Voltage Ratios</a><ul>
 <li><a class="reference internal" href="#balance-injection">Balance Injection</a></li>
 <li><a class="reference internal" href="#main-transformer-10-1-calibration">Main Transformer 10:1 Calibration</a></li>
 </ul>
@@ -1834,7 +1884,13 @@ json strings holding uncertain numbers.</p>
 </li>
 <li><a class="reference internal" href="#traceability">Traceability</a></li>
 <li><a class="reference internal" href="#prediction">Prediction</a></li>
-<li><a class="reference internal" href="#python-scripts">Python Scripts</a></li>
+<li><a class="reference internal" href="#python-scripts">Python Scripts</a><ul>
+<li><a class="reference internal" href="#overview-of-how-the-scripts-connect">Overview of how the scripts connect</a></li>
+<li><a class="reference internal" href="#python">Python</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+<li><a class="reference internal" href="#testing">Testing</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#python-code">Python Code</a><ul>
 <li><a class="reference internal" href="#module-all_buildup">all_buildup.py</a><ul>
 <li><a class="reference internal" href="#all_buildup.BATCH"><code class="docutils literal notranslate"><span class="pre">BATCH</span></code></a><ul>
