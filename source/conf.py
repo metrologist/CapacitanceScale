@@ -10,7 +10,7 @@ import sys
 project = 'Capacitance Scale'
 copyright = '2026, Keith Jones'
 author = 'Keith Jones'
-release = '1.0'
+release = 'E.005.04'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
